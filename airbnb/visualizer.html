@@ -1,0 +1,784 @@
+<title>Airbnb Algorithm Stepper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F1F4F7; --surface:#FFFFFF; --surface2:#ECF0F4; --line:#D3DAE3; --ink:#17202C; --muted:#5D6878;
+  --acc:#0A7782; --acc-bg:#D6EDEF; --amber:#B97A16; --amber-bg:#FBE9C8; --ok:#2C7A4C; --ok-bg:#D9EEDF;
+  --bad:#B4433A; --bad-bg:#F6DCD8; --code-bg:#F7F9FB; --hl:#FFF1D2;
+  --sans:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Noto Sans SC",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --display:"Bricolage Grotesque","IBM Plex Sans","PingFang SC",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E131A; --surface:#151C26; --surface2:#1C2531; --line:#2A3544; --ink:#E3E9F0; --muted:#94A1B4;
+    --acc:#4DC3CC; --acc-bg:#11393F; --amber:#F1B551; --amber-bg:#3E3019; --ok:#5DC487; --ok-bg:#153725;
+    --bad:#EF7D72; --bad-bg:#42211E; --code-bg:#111821; --hl:#3A2F1C;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E131A; --surface:#151C26; --surface2:#1C2531; --line:#2A3544; --ink:#E3E9F0; --muted:#94A1B4;
+  --acc:#4DC3CC; --acc-bg:#11393F; --amber:#F1B551; --amber-bg:#3E3019; --ok:#5DC487; --ok-bg:#153725;
+  --bad:#EF7D72; --bad-bg:#42211E; --code-bg:#111821; --hl:#3A2F1C;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);padding-inline:16px;padding-block:28px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+header h1{font:700 clamp(26px,3.4vw,38px)/1.1 var(--display);margin:0;letter-spacing:-.01em;text-wrap:balance}
+header p{margin:8px 0 0;color:var(--muted);max-width:70ch}
+kbd{font:500 12px var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;align-items:start}
+.list{display:flex;flex-direction:column;gap:6px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+.list h2{font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 4px 2px}
+.item{all:unset;cursor:pointer;display:grid;grid-template-columns:44px 1fr;gap:2px 8px;padding:9px 10px;border-radius:9px;border:1px solid transparent}
+.item:hover{background:var(--surface)}
+.item:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.item[aria-current="true"]{background:var(--surface);border-color:var(--line)}
+.item .no{font:700 13px var(--mono);color:var(--acc);grid-row:span 2;padding-top:1px}
+.item .nm{font-weight:600;font-size:14px;line-height:1.3}
+.item .meta{font:400 11.5px var(--mono);color:var(--muted)}
+.star{color:var(--amber);font-weight:700}
+main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+.head h2{font:700 26px/1.15 var(--display);margin:0}
+.chip{font:500 12px var(--mono);padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.chip.H{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.chip.M{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,var(--line))}
+.chip.both{color:var(--amber);border-color:var(--amber)}
+.head a{font-size:13px;color:var(--acc);margin-left:auto}
+.idea{margin:0;max-width:78ch;color:var(--ink)}
+.idea b{font-weight:600}
+.examples{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.examples span{font-size:12px;color:var(--muted);margin-right:2px}
+.ex{all:unset;cursor:pointer;font:500 12.5px var(--mono);padding:5px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface)}
+.ex[aria-pressed="true"]{border-color:var(--acc);color:var(--acc);background:var(--acc-bg)}
+.ex:focus-visible{outline:2px solid var(--acc)}
+.stagebox{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#stage{padding:10px 10px 4px;overflow-x:auto}
+#stage svg{display:block;width:100%;height:auto;min-width:520px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface2)}
+.btn{all:unset;cursor:pointer;min-width:34px;height:32px;display:inline-grid;place-items:center;border-radius:8px;border:1px solid var(--line);background:var(--surface);font:600 14px var(--mono);padding:0 8px}
+.btn:hover{border-color:var(--acc)}
+.btn:focus-visible{outline:2px solid var(--acc)}
+.btn.play{background:var(--acc);color:var(--surface);border-color:var(--acc);min-width:72px;font-family:var(--sans);font-size:13px}
+#scrub{flex:1;min-width:120px;accent-color:var(--acc)}
+.count{font:500 12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;min-width:74px;text-align:right}
+select{font:500 12px var(--mono);height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 6px}
+.msg{padding:12px 14px;border-top:1px solid var(--line);font-size:15px;min-height:50px;background:var(--surface)}
+.msg .stepn{font:600 11px var(--mono);color:var(--amber);letter-spacing:.06em;margin-right:8px}
+.detail{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.pane h3{font:600 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;padding:9px 12px;border-bottom:1px solid var(--line)}
+.code{background:var(--code-bg);font:400 12.5px/1.65 var(--mono);overflow:auto;max-height:420px;padding:6px 0}
+.ln{display:flex;white-space:pre;padding-right:12px}
+.ln .n{width:34px;flex:none;text-align:right;padding-right:10px;color:var(--muted);opacity:.6;user-select:none}
+.ln.on{background:var(--hl);box-shadow:inset 3px 0 0 var(--amber)}
+.ln.on .n{opacity:1;color:var(--amber);font-weight:700}
+.kw{color:var(--acc);font-weight:500}
+.cm{color:var(--muted);font-style:italic}
+.vars{margin:0;padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font:400 12.5px var(--mono)}
+.vars dt{color:var(--muted)}
+.vars dd{margin:0;word-break:break-word;font-variant-numeric:tabular-nums}
+footer{font-size:12.5px;color:var(--muted)}
+footer a{color:var(--acc)}
+/* svg */
+svg text{font:500 12px var(--mono);fill:var(--ink)}
+svg .tm{fill:var(--muted);font-size:11px;font-weight:400}
+svg .tl{fill:var(--muted);font:500 11.5px var(--sans)}
+svg .tb{font-weight:700}
+svg .big{font:700 22px var(--display);fill:var(--ink)}
+svg .cell{fill:var(--surface2);stroke:var(--line)}
+svg .acc{fill:var(--acc-bg);stroke:var(--acc)}
+svg .ok{fill:var(--ok-bg);stroke:var(--ok);stroke-width:1.5}
+svg .cur{fill:var(--amber-bg);stroke:var(--amber);stroke-width:2.2}
+svg .bad{fill:var(--bad-bg);stroke:var(--bad);stroke-width:1.8}
+svg .soft{fill:var(--amber-bg);stroke:var(--line)}
+svg .dim{fill:var(--surface);stroke:var(--line);stroke-dasharray:4 3}
+svg .ghost{fill:none;stroke:var(--line);stroke-dasharray:4 3}
+svg .cand{fill:none;stroke:var(--amber);stroke-width:2.2;stroke-dasharray:6 4}
+svg .mark{fill:none;stroke:var(--amber);stroke-width:2.5}
+svg .axis{stroke:var(--line);stroke-width:2}
+svg .tick{stroke:var(--muted);stroke-width:1}
+svg .err{stroke:var(--bad);stroke-width:5;stroke-linecap:round}
+svg .dot{fill:var(--ink)}
+svg .edge{stroke:var(--muted);stroke-width:1.6;fill:none}
+svg .edge.hot{stroke:var(--amber);stroke-width:2.6}
+svg .ahp{fill:var(--muted)}
+svg .ahp2{fill:var(--amber)}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .list{position:static;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .list h2{grid-column:1/-1}
+  .detail{grid-template-columns:1fr}
+  .head a{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Airbnb 高频题，一步一步看</h1>
+    <p>你的 repo 里还没做的 8 道高频题。每一帧对应下方代码里高亮的那一行，右侧是这一刻的变量。
+      <kbd>←</kbd> <kbd>→</kbd> 单步，<kbd>空格</kbd> 播放 / 暂停。</p>
+  </header>
+
+  <div class="app">
+    <nav class="list" id="list" aria-label="题目"></nav>
+    <main>
+      <div class="head" id="head"></div>
+      <p class="idea" id="idea"></p>
+      <div class="examples" id="examples"></div>
+      <section class="stagebox" aria-label="动画">
+        <div id="stage"></div>
+        <div class="controls">
+          <button class="btn" id="reset" aria-label="回到第一步" title="回到第一步">↺</button>
+          <button class="btn" id="prev" aria-label="上一步" title="上一步 (←)">‹</button>
+          <button class="btn play" id="play" aria-label="播放">播放</button>
+          <button class="btn" id="next" aria-label="下一步" title="下一步 (→)">›</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" aria-label="跳到某一步">
+          <span class="count" id="count">0 / 0</span>
+          <select id="speed" aria-label="速度">
+            <option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option>
+          </select>
+        </div>
+        <div class="msg" id="msg" aria-live="polite"></div>
+      </section>
+      <div class="detail">
+        <section class="pane"><h3>Python</h3><div class="code" id="code"></div></section>
+        <section class="pane"><h3>变量</h3><dl class="vars" id="vars"></dl></section>
+      </div>
+    </main>
+  </div>
+  <footer>频率来自 LeetCode 公司标签统计（<a href="https://codejeet.com/company/airbnb">codejeet</a>）。
+    <span class="star">★</span> 表示同时出现在流传最广的 Airbnb 面经清单里（<a href="https://github.com/kanglicheng/airbnb-1">airbnb-1</a>）。</footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const T = (x, y, s, cls = '', a = '') => `<text x="${x}" y="${y}" ${cls ? `class="${cls}"` : ''} ${a}>${esc(s)}</text>`;
+const R = (x, y, w, h, cls, rx = 6) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" class="${cls}"/>`;
+const MID = 'text-anchor="middle"', END = 'text-anchor="end"';
+const DEFS = `<defs>
+ <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahp"/></marker>
+ <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahp2"/></marker></defs>`;
+
+/* ---------- 751 IP to CIDR ---------- */
+const ipInt = ip => ip.split('.').reduce((a, o) => a * 256 + Number(o), 0);
+const intIp = x => [3, 2, 1, 0].map(k => Math.floor(x / 256 ** k) % 256).join('.');
+const lowbit = x => { if (x === 0) return 2 ** 32; let s = 1; while (x % (s * 2) === 0) s *= 2; return s; };
+
+/* ---------- 1257 tree layout ---------- */
+function layoutTree(regions) {
+  const kids = {}, par = {};
+  regions.forEach(([b, ...s]) => { kids[b] = (kids[b] || []).concat(s); s.forEach(x => par[x] = b); });
+  const root = regions.map(r => r[0]).find(n => !par[n]);
+  const pos = {}; let leaf = 0, depth = 0;
+  (function walk(n, d) {
+    depth = Math.max(depth, d);
+    const ch = kids[n] || [];
+    if (!ch.length) pos[n] = { x: leaf++, d };
+    else { ch.forEach(c => walk(c, d + 1)); pos[n] = { x: (pos[ch[0]].x + pos[ch[ch.length - 1]].x) / 2, d }; }
+  })(root, 0);
+  return { pos, par, leaves: leaf, depth };
+}
+
+/* ---------- 631 helpers ---------- */
+function expand(ref) {
+  const [a, b] = ref.split(':'), p = s => ({ c: s.charCodeAt(0), r: +s.slice(1) });
+  const A = p(a), B = b ? p(b) : A, out = [];
+  for (let r = A.r; r <= B.r; r++) for (let c = A.c; c <= B.c; c++) out.push(String.fromCharCode(c) + r);
+  return out;
+}
+const fmtOp = op => `${op[0]}(${op.slice(1).map(x => JSON.stringify(x)).join(', ')})`;
+
+const PROBLEMS = [
+/* ======================================================================= */
+{ id: '751', title: 'IP to CIDR', diff: 'M', freq: 71.3, both: true, slug: 'ip-to-cidr',
+  idea: '<b>思路：</b>每次从当前地址 x 出发，取最大的“对齐”块。块大小是 x 的最低位 1（x &amp; −x），但不能超过剩余要覆盖的数量 n，超过就减半。一个大小为 2^k 的块就是前缀长度 32 − k 的 CIDR。',
+  code: `def ipToCIDR(ip, n):
+    x = ip_to_int(ip)
+    res = []
+    while n > 0:
+        step = x & -x              # 最低位的 1：x 处最大的对齐块
+        while step > n:
+            step //= 2
+        res.append(f"{int_to_ip(x)}/{33 - step.bit_length()}")
+        x += step
+        n -= step
+    return res`,
+  examples: [{ label: '255.0.0.7, n=10', args: { ip: '255.0.0.7', n: 10 } },
+             { label: '117.145.102.62, n=8', args: { ip: '117.145.102.62', n: 8 } },
+             { label: '192.168.1.5, n=9', args: { ip: '192.168.1.5', n: 9 } }],
+  view: [760, 250],
+  run({ ip, n }) {
+    const F = [], start = ipInt(ip), total = n; let x = start; const res = [];
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, x, n, start, total, res: res.map(r => ({ ...r })), ...ex,
+      vars: { x: `${x}  (${intIp(x)})`, n, step: ex.step ?? '—', res: res.map(r => r.cidr).join('  ') || '[]' } });
+    snap(2, `把 ${ip} 转成 32 位整数 x = ${x}，要覆盖 n = ${n} 个地址。`);
+    while (n > 0) {
+      let step = lowbit(x);
+      snap(5, `x 的最低位 1 是 2^${Math.log2(step)} = ${step}：从 x 开始，最大的对齐块有 ${step} 个地址。`, { step, cand: step, lb: true });
+      while (step > n) { step /= 2; snap(7, `${step * 2} 超过剩余的 n = ${n}，减半为 ${step}。`, { step, cand: step }); }
+      const len = 32 - Math.log2(step);
+      res.push({ off: x - start, size: step, cidr: `${intIp(x)}/${len}` });
+      snap(8, `输出 ${intIp(x)}/${len}：前 ${len} 位固定，后 ${32 - len} 位任意，正好 ${step} 个地址。`, { step });
+      x += step; n -= step;
+      snap(10, `x 前进到 ${intIp(x)}，还剩 n = ${n}。`);
+    }
+    snap(11, `完成：${res.length} 个 CIDR 块恰好覆盖这 ${total} 个地址。`, { done: true });
+    return F;
+  },
+  render(f) {
+    let s = T(20, 18, 'x 的 32 位（青色 = 当前块里可以任意取值的主机位，琥珀色框 = 最低位的 1）', 'tl');
+    const k = f.step ? Math.log2(f.step) : -1, lb = Math.log2(lowbit(f.x));
+    for (let i = 31; i >= 0; i--) {
+      const col = 31 - i, X = 20 + col * 21 + Math.floor(col / 8) * 12, bit = Math.floor(f.x / 2 ** i) % 2;
+      s += R(X, 40, 18, 26, i < k ? 'acc' : 'cell', 4) + T(X + 9, 58, bit, bit ? 'tb' : 'tm', MID);
+      if (f.lb && i === lb) s += R(X - 2, 38, 22, 30, 'mark', 5);
+    }
+    for (let o = 0; o < 4; o++) s += T(20 + o * 180 + 84, 84, Math.floor(f.x / 256 ** (3 - o)) % 256, 'tm', MID);
+    const X0 = 20, W = 708, sc = W / f.total, Y = 112;
+    s += T(20, Y - 8, `要覆盖的 ${f.total} 个地址`, 'tl') + R(X0, Y, W, 34, 'cell', 4);
+    f.res.forEach((r, i) => {
+      s += R(X0 + r.off * sc, Y, r.size * sc, 34, 'ok', 3);
+      if (r.size * sc > 70) s += T(X0 + (r.off + r.size / 2) * sc, Y + 21, r.cidr, '', MID);
+    });
+    if (f.cand) { const off = f.x - f.start, x = X0 + off * sc, w = Math.min(f.cand * sc, X0 + W + 24 - x);
+      s += `<rect x="${x}" y="${Y - 4}" width="${w}" height="42" rx="4" class="cand"/>`;
+      if (off + f.cand > f.total) s += T(X0 + W, Y + 56, `候选块 ${f.cand} > 剩余 ${f.n}`, 'tm', END); }
+    s += T(X0, Y + 56, intIp(f.start), 'tm') ;
+    s += T(20, 200, '输出', 'tl');
+    let cx = 60; f.res.forEach(r => { const w = r.cidr.length * 7.4 + 16; if (cx + w > 740) return; s += R(cx, 186, w, 24, 'ok', 12) + T(cx + w / 2, 202, r.cidr, '', MID); cx += w + 8; });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1058', title: 'Minimize Rounding Error to Meet Target', short: 'Minimize Rounding Error', diff: 'M', freq: 69.3, both: true, slug: 'minimize-rounding-error-to-meet-target',
+  idea: '<b>思路：</b>先全部向下取整，差多少就必须有 k 个数向上取整。向上取整的误差是 1 − f，向下取整是 f，所以应该把小数部分 f 最大的 k 个数向上取整。k 不在 [0, 非整数个数] 内就无解。面经里叫 <b>Round Prices</b>。',
+  code: `def minimizeError(prices, target):
+    fl = [floor(float(p)) for p in prices]
+    fr = [float(p) - f for p, f in zip(prices, fl)]
+    k = target - sum(fl)                  # 需要向上取整的个数
+    fracs = sorted((f for f in fr if f > 0), reverse=True)
+    if k < 0 or k > len(fracs): return "-1"
+    err = sum(1 - f for f in fracs[:k]) + sum(fracs[k:])
+    return f"{err:.3f}"`,
+  examples: [{ label: '[0.7, 2.8, 4.9] → 8', args: { prices: ['0.700', '2.800', '4.900'], target: 8 } },
+             { label: '[2.3, 1.1, 4.7, 0.9] → 9', args: { prices: ['2.300', '1.100', '4.700', '0.900'], target: 9 } },
+             { label: '[1.5, 2.5, 3.5] → 10', args: { prices: ['1.500', '2.500', '3.500'], target: 10 } }],
+  view: [760, 300],
+  run({ prices, target }) {
+    const F = [], rows = prices.map(p => ({ p, fl: null, fr: null, d: null }));
+    let k = null, err = null, order = rows.map((_, i) => i);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, rows: rows.map(r => ({ ...r })), order: [...order], k, err, target, ...ex,
+      vars: { target, 'sum(fl)': rows.every(r => r.fl !== null) ? rows.reduce((a, r) => a + r.fl, 0) : '…', k: k ?? '…', err: err === null ? '…' : err.toFixed(3) } });
+    snap(1, `目标和是 ${target}。每个价格只能取 floor 或 ceil，要让总误差最小。`);
+    rows.forEach((r, i) => { r.fl = Math.floor(+r.p); r.fr = +((+r.p) - r.fl).toFixed(3);
+      snap(2, `${r.p} 向下是 ${r.fl}，小数部分 f = ${r.fr.toFixed(3)}。`, { cur: i }); });
+    const F0 = rows.reduce((a, r) => a + r.fl, 0); k = target - F0;
+    snap(4, `全部向下取整的和是 ${F0}，所以必须有 k = ${target} − ${F0} = ${k} 个数向上取整。`);
+    const nonint = rows.map((_, i) => i).filter(i => rows[i].fr > 0);
+    order = [...nonint].sort((a, b) => rows[b].fr - rows[a].fr).concat(rows.map((_, i) => i).filter(i => rows[i].fr === 0));
+    snap(5, `按小数部分从大到小排序：f 越大，向上取整的误差 1 − f 越小。`);
+    if (k < 0 || k > nonint.length) { snap(6, `k = ${k} 不在 [0, ${nonint.length}] 里，凑不出目标，返回 "-1"。`, { fail: true }); return F; }
+    err = 0;
+    order.forEach((i, j) => {
+      const r = rows[i];
+      if (r.fr === 0) { r.d = 'int'; snap(7, `${r.p} 是整数，没有误差。`, { cur: i }); return; }
+      if (j < k) { r.d = 'up'; err += 1 - r.fr; snap(7, `第 ${j + 1} 大的小数：${r.p} 向上取到 ${r.fl + 1}，误差 ${(1 - r.fr).toFixed(3)}。`, { cur: i }); }
+      else { r.d = 'down'; err += r.fr; snap(7, `${r.p} 向下取到 ${r.fl}，误差 ${r.fr.toFixed(3)}。`, { cur: i }); }
+    });
+    snap(8, `最小总误差 = ${err.toFixed(3)}。`, { done: true });
+    return F;
+  },
+  render(f) {
+    let s = '';
+    const X0 = 170, X1 = 600;
+    f.order.forEach((i, j) => {
+      const r = f.rows[i], y = 30 + j * 58;
+      if (f.cur === i) s += R(8, y - 6, 744, 50, 'soft', 8);
+      s += T(24, y + 24, r.p, 'tb');
+      s += `<line x1="${X0}" y1="${y + 20}" x2="${X1}" y2="${y + 20}" class="axis"/>`;
+      if (r.fl !== null) {
+        s += `<line x1="${X0}" y1="${y + 12}" x2="${X0}" y2="${y + 28}" class="tick"/><line x1="${X1}" y1="${y + 12}" x2="${X1}" y2="${y + 28}" class="tick"/>`;
+        s += T(X0, y + 42, r.fl, 'tm', MID) + T(X1, y + 42, r.fl + 1, 'tm', MID);
+        const px = X0 + (X1 - X0) * r.fr;
+        if (r.d === 'up') s += `<line x1="${px}" y1="${y + 20}" x2="${X1}" y2="${y + 20}" class="err"/>`;
+        if (r.d === 'down') s += `<line x1="${X0}" y1="${y + 20}" x2="${px}" y2="${y + 20}" class="err"/>`;
+        s += `<circle cx="${px}" cy="${y + 20}" r="6" class="dot"/>` + T(px, y + 6, `f=${r.fr.toFixed(3)}`, 'tm', MID);
+        const lab = r.d === 'up' ? `ceil → ${r.fl + 1}` : r.d === 'down' ? `floor → ${r.fl}` : r.d === 'int' ? '整数' : '';
+        if (lab) s += T(624, y + 24, lab, r.d === 'up' ? 'tb' : '');
+      }
+    });
+    const yb = 30 + f.order.length * 58 + 6;
+    if (f.fail) s += T(24, yb + 12, '无解：返回 "-1"', 'big');
+    else s += T(24, yb + 10, `k = ${f.k ?? '…'}  个向上取整`, 'tl') + T(300, yb + 10, `总误差 = ${f.err === null ? '…' : f.err.toFixed(3)}`, f.done ? 'big' : 'tl');
+    s += T(744, yb + 10, '红线长度 = 这个数的取整误差', 'tm', END);
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '756', title: 'Pyramid Transition Matrix', short: 'Pyramid Transition', diff: 'M', freq: 69.3, both: true, slug: 'pyramid-transition-matrix',
+  idea: '<b>思路：</b>回溯。在当前这一行上面，从左到右一块一块地放：每个位置只能放 allowed 里“下面两块 → 上面一块”允许的字母。一行放满就递归往上；放不下就回溯。把已经证明搭不上去的行记进 bad，避免重复搜索。',
+  code: `def pyramidTransition(bottom, allowed):
+    up = defaultdict(list)
+    for a, b, c in allowed:
+        up[a + b].append(c)
+    bad = set()                          # 已证明搭不上去的行
+
+    def solve(row):
+        if len(row) == 1:
+            return True
+        if row in bad:
+            return False
+        if fill(row, 0, ""):
+            return True
+        bad.add(row)
+        return False
+
+    def fill(row, i, cur):               # 一块一块地搭上一行
+        if i == len(row) - 1:
+            return solve(cur)
+        for c in up[row[i:i + 2]]:
+            if fill(row, i + 1, cur + c):
+                return True
+        return False
+
+    return solve(bottom)`,
+  examples: [{ label: 'BCD → True', args: { bottom: 'BCD', allowed: ['BCC', 'CDE', 'CEA', 'FFF'] } },
+             { label: 'AAAA → False', args: { bottom: 'AAAA', allowed: ['AAB', 'AAC', 'BCD', 'BBE', 'DEF'] } },
+             { label: 'ABC → True（要回溯）', args: { bottom: 'ABC', allowed: ['ABD', 'ABE', 'BCF', 'EFG'] } }],
+  view: [760, 300],
+  run({ bottom, allowed }) {
+    const F = [], up = {}, levels = [bottom], bad = new Set(); let cap = false;
+    allowed.forEach(s => (up[s[0] + s[1]] ||= []).push(s[2]));
+    const table = Object.entries(up).map(([k, v]) => `${k}→${v.join('/')}`).join('  ');
+    const snap = (line, msg, ex = {}, force) => { if (F.length >= 400 && !force) { cap = true; return; }
+      F.push({ line, msg, levels: [...levels], n: bottom.length, ...ex, vars: { 查找表: table, 层: levels.length - 1, bad: [...bad].join(', ') || '∅' } }); };
+    snap(4, `把 allowed 建成查找表：下面两块 → 上面可以放哪些字母。`);
+    function solve(L) {
+      const row = levels[L];
+      if (row.length === 1) { snap(9, `搭到塔顶 "${row}"，成功。`, { win: true }); return true; }
+      if (bad.has(row)) { snap(11, `"${row}" 之前已证明搭不上去，直接返回 False（记忆化剪枝）。`, { badRow: L }); return false; }
+      levels[L + 1] = '';
+      if (fill(L, 0)) return true;
+      levels.length = L + 1; bad.add(row);
+      snap(14, `"${row}" 上面怎么放都搭不出来，记入 bad。`, { badRow: L }); return false;
+    }
+    function fill(L, i) {
+      const row = levels[L];
+      if (i === row.length - 1) { snap(19, `第 ${L + 1} 层 "${levels[L + 1]}" 放满了，递归往上搭。`, { rowDone: L + 1 });
+        const ok = solve(L + 1); if (!ok) levels.length = L + 2; return ok; }
+      const pair = row.slice(i, i + 2), cands = up[pair] || [];
+      if (!cands.length) snap(20, `"${pair}" 上面没有允许的块。`, { cell: [L + 1, i], pair: [L, i], st: 'bad' });
+      for (const c of cands) {
+        levels[L + 1] = levels[L + 1].slice(0, i) + c;
+        snap(20, `在 "${pair}" 上面试放 ${c}。`, { cell: [L + 1, i], pair: [L, i], st: 'cur' });
+        if (fill(L, i + 1)) return true;
+        levels[L + 1] = levels[L + 1].slice(0, i);
+        snap(21, `放 ${c} 走不通，回溯。`, { cell: [L + 1, i], pair: [L, i], st: 'bad' });
+      }
+      return false;
+    }
+    const ok = solve(0);
+    snap(25, (ok ? '返回 True。' : '返回 False：无论怎么放都到不了塔顶。') + (cap ? '（搜索步数太多，动画只展示前 400 步）' : ''), { final: ok }, true);
+    return F;
+  },
+  render(f) {
+    let s = ''; const n = f.n, C = 52, cx = 380, base = 250;
+    for (let L = 0; L < n; L++) {
+      const cnt = n - L, row = f.levels[L] || '', y = base - L * (C + 4);
+      for (let i = 0; i < cnt; i++) {
+        const x = cx - (cnt * (C + 4)) / 2 + i * (C + 4), ch = row[i] || '';
+        let cls = L === 0 ? 'cell' : ch ? 'acc' : 'ghost';
+        if (f.badRow === L && ch) cls = 'bad';
+        if (f.cell && f.cell[0] === L && f.cell[1] === i) cls = f.st;
+        if ((f.win || f.final) && ch) cls = 'ok';
+        if (f.final === false && L === 0) cls = 'bad';
+        s += R(x, y, C, C, cls, 6) + (ch ? T(x + C / 2, y + C / 2 + 7, ch, 'big', MID) : '');
+      }
+    }
+    if (f.pair) { const [L, i] = f.pair, cnt = n - L, y = base - L * (C + 4), x = cx - (cnt * (C + 4)) / 2 + i * (C + 4);
+      s += `<rect x="${x - 3}" y="${y - 3}" width="${2 * C + 10}" height="${C + 6}" rx="8" class="mark"/>`; }
+    s += T(20, 24, '底层固定；青色 = 已放的块，琥珀色 = 正在尝试，红色 = 回溯', 'tl');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1557', title: 'Minimum Number of Vertices to Reach All Nodes', short: 'Min Vertices to Reach All', diff: 'M', freq: 69.3, both: true, slug: 'minimum-number-of-vertices-to-reach-all-nodes',
+  idea: '<b>思路：</b>入度为 0 的点没有任何边能到达，必须选；而图是有向无环图，每个其他点都能从某个入度为 0 的点走到。所以答案就是所有入度为 0 的点，O(V + E)。',
+  code: `def findSmallestSetOfVertices(n, edges):
+    has_in = [False] * n
+    for u, v in edges:
+        has_in[v] = True                 # v 能从 u 到达
+    return [i for i in range(n) if not has_in[i]]`,
+  examples: [{ label: 'n=6 → [0, 3]', args: { n: 6, edges: [[0, 1], [0, 2], [2, 5], [3, 4], [4, 2]],
+               pos: [[160, 60], [80, 170], [280, 170], [520, 60], [440, 170], [280, 270]] } },
+             { label: 'n=5 → [0, 2, 3]', args: { n: 5, edges: [[0, 1], [2, 1], [3, 1], [1, 4], [2, 4]],
+               pos: [[120, 60], [300, 170], [300, 60], [480, 60], [420, 270]] } }],
+  view: [760, 310],
+  run({ n, edges, pos }) {
+    const F = [], hasIn = Array(n).fill(false);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, hasIn: [...hasIn], n, edges, pos, ...ex,
+      vars: { has_in: hasIn.map((b, i) => b ? i : null).filter(v => v !== null).join(', ') || '∅', 答案: ex.ans ? `[${ex.ans}]` : '…' } });
+    snap(2, '入度为 0 的点没有任何边能到达，所以必须选；反过来，选了它们就够了。');
+    edges.forEach(([u, v], e) => { hasIn[v] = true; snap(4, `边 ${u} → ${v}：${v} 有入边，能从 ${u} 到达，不需要选。`, { edge: e, hot: v }); });
+    const ans = [...Array(n).keys()].filter(i => !hasIn[i]);
+    snap(5, `入度为 0 的点是 [${ans}]，这就是答案。`, { ans });
+    const seen = new Set(ans), q = [...ans], adj = Array.from({ length: n }, () => []);
+    edges.forEach(([u, v], e) => adj[u].push([v, e]));
+    while (q.length) { const u = q.shift(); for (const [v, e] of adj[u]) if (!seen.has(v)) { seen.add(v); q.push(v);
+      snap(5, `验证：从答案出发，经过 ${u} → ${v} 可以到达 ${v}。`, { ans, reach: [...seen], edge: e, hot: v }); } }
+    snap(5, `所有 ${n} 个点都能到达，最少需要 ${ans.length} 个起点。`, { ans, reach: [...seen], done: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const r = 22;
+    f.edges.forEach(([u, v], e) => {
+      const [x1, y1] = f.pos[u], [x2, y2] = f.pos[v], d = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / d, uy = (y2 - y1) / d, hot = f.edge === e;
+      s += `<line x1="${x1 + ux * r}" y1="${y1 + uy * r}" x2="${x2 - ux * (r + 3)}" y2="${y2 - uy * (r + 3)}" class="edge${hot ? ' hot' : ''}" marker-end="url(#${hot ? 'ah2' : 'ah'})"/>`;
+    });
+    for (let i = 0; i < f.n; i++) {
+      const [x, y] = f.pos[i];
+      let cls = f.hasIn[i] ? 'dim' : 'cell';
+      if (f.reach && f.reach.includes(i)) cls = 'acc';
+      if (f.ans && f.ans.includes(i)) cls = 'ok';
+      if (f.hot === i) cls = 'cur';
+      s += `<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>` + T(x, y + 5, i, 'tb', MID);
+      if (f.ans && f.ans.includes(i)) s += T(x, y - 30, '起点', 'tm', MID);
+    }
+    s += T(600, 150, '虚线圈 = 有入边', 'tm') + T(600, 170, '绿色 = 入度 0（答案）', 'tm') + T(600, 190, '青色 = 已验证可达', 'tm');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1235', title: 'Maximum Profit in Job Scheduling', short: 'Max Profit Job Scheduling', diff: 'H', freq: 92.4, both: false, slug: 'maximum-profit-in-job-scheduling',
+  idea: '<b>思路：</b>按结束时间排序，dp[i] = 只考虑前 i 个工作时的最大收益。对第 i 个工作：不做就是 dp[i−1]；做的话，用二分找出在它开始前就结束的工作有 j 个，收益是 dp[j] + profit。两者取大。O(n log n)。',
+  code: `def jobScheduling(startTime, endTime, profit):
+    jobs = sorted(zip(endTime, startTime, profit))
+    ends = [e for e, _, _ in jobs]
+    dp = [0] * (len(jobs) + 1)
+    for i, (e, s, p) in enumerate(jobs, 1):
+        j = bisect_right(ends, s, 0, i - 1)   # 在 s 之前结束的工作数
+        dp[i] = max(dp[i - 1], dp[j] + p)     # 不做 vs 做
+    return dp[-1]`,
+  examples: [{ label: '4 个工作 → 120', args: { start: [1, 2, 3, 3], end: [3, 4, 5, 6], profit: [50, 10, 40, 70] } },
+             { label: '5 个工作 → 150', args: { start: [1, 2, 3, 4, 6], end: [3, 5, 10, 6, 9], profit: [20, 20, 100, 70, 60] } },
+             { label: '3 个工作 → 6', args: { start: [1, 1, 1], end: [2, 3, 4], profit: [5, 6, 4] } }],
+  view: [760, 300],
+  run({ start, end, profit }) {
+    const F = [], jobs = start.map((s, i) => ({ s, e: end[i], p: profit[i] })).sort((a, b) => a.e - b.e);
+    const ends = jobs.map(j => j.e), dp = Array(jobs.length + 1).fill(null); dp[0] = 0;
+    const bis = (s, hi) => { let lo = 0; while (lo < hi) { const m = (lo + hi) >> 1; if (ends[m] <= s) lo = m + 1; else hi = m; } return lo; };
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, jobs, dp: [...dp], ...ex, vars: { dp: dp.map(v => v === null ? '·' : v).join('  '), ...(ex.v || {}) } });
+    snap(2, '按结束时间排序。dp[i] = 只考虑前 i 个工作时能拿到的最大收益，dp[0] = 0。');
+    for (let i = 1; i <= jobs.length; i++) {
+      const { s, e, p } = jobs[i - 1];
+      snap(5, `第 ${i} 个工作：时间 [${s}, ${e})，收益 ${p}。`, { cur: i - 1 });
+      const j = bis(s, i - 1);
+      snap(6, `二分：前 ${j} 个工作在 ${s} 之前结束，能和它兼容。`, { cur: i - 1, compat: j, v: { j } });
+      const take = dp[j] + p, skip = dp[i - 1]; dp[i] = Math.max(take, skip);
+      snap(7, `做它：dp[${j}] + ${p} = ${take}；不做：dp[${i - 1}] = ${skip}。所以 dp[${i}] = ${dp[i]}。`, { cur: i - 1, compat: j, v: { j, 做: take, 不做: skip } });
+    }
+    const chosen = []; let i = jobs.length;
+    while (i > 0) { const { s, p } = jobs[i - 1], j = bis(s, i - 1); if (dp[i] === dp[j] + p) { chosen.push(i - 1); i = j; } else i--; }
+    snap(8, `最大收益 ${dp[jobs.length]}。回溯 dp 得到选中的工作（绿色）。`, { chosen, done: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const tmin = Math.min(...f.jobs.map(j => j.s)), tmax = Math.max(...f.jobs.map(j => j.e));
+    const X0 = 70, X1 = 730, sc = (X1 - X0) / (tmax - tmin), X = t => X0 + (t - tmin) * sc;
+    f.jobs.forEach((jb, r) => {
+      const y = 22 + r * 30;
+      let cls = 'cell';
+      if (f.compat !== undefined && r < f.compat) cls = 'acc';
+      if (f.cur === r) cls = 'cur';
+      if (f.chosen && f.chosen.includes(r)) cls = 'ok';
+      s += T(X0 - 12, y + 17, `#${r + 1}`, 'tm', END) + R(X(jb.s), y, X(jb.e) - X(jb.s), 24, cls, 5) + T(X(jb.s) + 8, y + 16, `+${jb.p}`, '');
+    });
+    const ya = 22 + f.jobs.length * 30 + 6;
+    s += `<line x1="${X0}" y1="${ya}" x2="${X1}" y2="${ya}" class="axis"/>`;
+    for (let t = tmin; t <= tmax; t++) s += `<line x1="${X(t)}" y1="${ya - 4}" x2="${X(t)}" y2="${ya + 4}" class="tick"/>` + T(X(t), ya + 18, t, 'tm', MID);
+    const yd = ya + 40;
+    s += T(X0 - 12, yd + 22, 'dp', 'tl', END);
+    f.dp.forEach((v, i) => {
+      let cls = 'cell';
+      if (f.compat === i) cls = 'acc';
+      if (f.cur !== undefined && i === f.cur + 1) cls = 'cur';
+      if (f.done && i === f.dp.length - 1) cls = 'ok';
+      s += R(X0 + i * 62, yd, 54, 32, cls, 6) + T(X0 + i * 62 + 27, yd + 21, v === null ? '·' : v, 'tb', MID) + T(X0 + i * 62 + 27, yd + 48, i, 'tm', MID);
+    });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1257', title: 'Smallest Common Region', diff: 'M', freq: 84.9, both: false, slug: 'smallest-common-region',
+  idea: '<b>思路：</b>就是树上的最近公共祖先。先建“子区域 → 父区域”的映射；从 region1 一路往上，把经过的区域都放进 seen；再从 region2 往上走，第一个出现在 seen 里的区域就是答案。',
+  code: `def findSmallestRegion(regions, region1, region2):
+    parent = {}
+    for big, *subs in regions:
+        for s in subs: parent[s] = big
+    seen = set()
+    while region1:
+        seen.add(region1); region1 = parent.get(region1)
+    while region2 not in seen:
+        region2 = parent[region2]
+    return region2`,
+  examples: [{ label: 'Quebec, New York', args: { r1: 'Quebec', r2: 'New York' } },
+             { label: 'Canada, South America', args: { r1: 'Canada', r2: 'South America' } },
+             { label: 'Boston, New York', args: { r1: 'Boston', r2: 'New York' } }].map(e => ({ ...e, args: { ...e.args, regions:
+               [['Earth', 'North America', 'South America'], ['North America', 'United States', 'Canada'], ['United States', 'New York', 'Boston'], ['Canada', 'Ontario', 'Quebec'], ['South America', 'Brazil']] } })),
+  view: [760, 300],
+  run({ regions, r1, r2 }) {
+    const F = [], L = layoutTree(regions), parent = {}, seen = [], path2 = []; let built = 0, a = r1, b = r2;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, L, regions, built, seen: [...seen], path2: [...path2], r1, r2, ...ex,
+      vars: { seen: seen.join(' → ') || '∅', region2: ex.cur2 ?? b } });
+    regions.forEach(([big, ...subs]) => { subs.forEach(s => parent[s] = big); built++; snap(4, `记录：${subs.join('、')} 的父区域是 ${big}。`); });
+    while (a) { seen.push(a); snap(7, `region1 往上走，把 ${a} 加入 seen。`, { cur1: a }); a = parent[a]; }
+    while (!seen.includes(b)) { path2.push(b); snap(9, `${b} 不在 seen 里，region2 继续往上。`, { cur2: b }); b = parent[b]; }
+    snap(10, `${b} 在 seen 里，它就是最小公共区域。`, { ans: b, cur2: b });
+    return F;
+  },
+  render(f) {
+    let s = ''; const { pos, par, leaves } = f.L, sp = 620 / Math.max(1, leaves - 1);
+    const P = n => [70 + pos[n].x * sp, 40 + pos[n].d * 72];
+    const known = new Set(); f.regions.slice(0, f.built).forEach(([b, ...subs]) => { known.add(b); subs.forEach(x => known.add(x)); });
+    f.regions.slice(0, f.built).forEach(([b, ...subs]) => subs.forEach(c => { const [x1, y1] = P(b), [x2, y2] = P(c);
+      s += `<line x1="${x1}" y1="${y1 + 14}" x2="${x2}" y2="${y2 - 14}" class="edge"/>`; }));
+    Object.keys(pos).forEach(n => {
+      const [x, y] = P(n), w = Math.max(76, n.length * 7.6 + 18);
+      let cls = known.has(n) ? 'cell' : 'ghost';
+      if (f.seen.includes(n)) cls = 'acc';
+      if (f.path2.includes(n)) cls = 'soft';
+      if (f.cur1 === n || f.cur2 === n) cls = 'cur';
+      if (f.ans === n) cls = 'ok';
+      s += R(x - w / 2, y - 14, w, 28, cls, 7) + T(x, y + 4, n, known.has(n) ? '' : 'tm', MID);
+      if (n === f.r1) s += T(x, y - 20, 'region1', 'tm', MID);
+      if (n === f.r2) s += T(x, y - 20, 'region2', 'tm', MID);
+    });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1298', title: 'Maximum Candies You Can Get from Boxes', short: 'Max Candies from Boxes', diff: 'H', freq: 83.9, both: false, slug: 'maximum-candies-you-can-get-from-boxes',
+  idea: '<b>思路：</b>BFS 模拟。一个盒子要打开，必须同时满足“拥有它”和“它是开的或者有钥匙”。两个条件可能以任意顺序满足，所以拿到钥匙时和拿到盒子时都要检查一次，满足就入队。每个盒子最多打开一次。',
+  code: `def maxCandies(status, candies, keys, containedBoxes, initialBoxes):
+    have, opened, total = set(initialBoxes), set(), 0
+    q = deque(b for b in initialBoxes if status[b])
+    while q:
+        b = q.popleft()
+        if b in opened: continue
+        opened.add(b); total += candies[b]
+        for k in keys[b]:
+            status[k] = 1
+            if k in have and k not in opened: q.append(k)
+        for c in containedBoxes[b]:
+            have.add(c)
+            if status[c] and c not in opened: q.append(c)
+    return total`,
+  examples: [{ label: '4 个盒子 → 16', args: { status: [1, 0, 1, 0], candies: [7, 5, 4, 100], keys: [[], [], [1], []], contained: [[1, 2], [3], [], []], initial: [0] } },
+             { label: '钥匙在手，盒子不在 → 1', args: { status: [1, 1, 1], candies: [100, 1, 100], keys: [[], [0, 2], []], contained: [[], [], []], initial: [1] } },
+             { label: '6 个盒子 → 6', args: { status: [1, 0, 0, 0, 0, 0], candies: [1, 1, 1, 1, 1, 1], keys: [[1, 2, 3, 4, 5], [], [], [], [], []], contained: [[1, 2, 3, 4, 5], [], [], [], [], []], initial: [0] } }],
+  view: [760, 270],
+  run({ status, candies, keys, contained, initial }) {
+    status = [...status];
+    const F = [], have = new Set(initial), opened = new Set(), q = initial.filter(b => status[b]); let total = 0;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, status: [...status], have: [...have], opened: [...opened], q: [...q], total, candies, keys, contained, ...ex,
+      vars: { 队列: `[${q.join(', ')}]`, total, 拥有: [...have].sort((a, b) => a - b).join(', '), 已打开: [...opened].join(', ') || '∅' } });
+    snap(3, `一开始拥有盒子 [${initial}]，其中开着的进入队列。`);
+    while (q.length) {
+      const b = q.shift(); snap(5, `从队列取出盒子 ${b}。`, { cur: b });
+      if (opened.has(b)) { snap(6, `盒子 ${b} 已经打开过，跳过。`, { cur: b }); continue; }
+      opened.add(b); total += candies[b]; snap(7, `打开盒子 ${b}，拿到 ${candies[b]} 颗糖，共 ${total} 颗。`, { cur: b });
+      for (const k of keys[b]) { status[k] = 1; const go = have.has(k) && !opened.has(k); if (go) q.push(k);
+        snap(10, `拿到盒子 ${k} 的钥匙` + (go ? `，而且已经拥有盒子 ${k}，入队。` : opened.has(k) ? '，它已经开过了。' : `，但还没有盒子 ${k}。`), { cur: b, hl: k }); }
+      for (const c of contained[b]) { have.add(c); const go = status[c] && !opened.has(c); if (go) q.push(c);
+        snap(13, `得到盒子 ${c}` + (go ? '，它能打开，入队。' : '，但它锁着，要等钥匙。'), { cur: b, hl: c }); }
+    }
+    snap(14, `队列空了，最多拿到 ${total} 颗糖。`, { done: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const n = f.candies.length, w = Math.min(112, (720 - (n - 1) * 10) / n), X0 = (760 - (n * w + (n - 1) * 10)) / 2;
+    for (let i = 0; i < n; i++) {
+      const x = X0 + i * (w + 10), y = 34, owned = f.have.includes(i);
+      let cls = owned ? 'cell' : 'dim';
+      if (f.q.includes(i)) cls = 'acc';
+      if (f.opened.includes(i)) cls = 'ok';
+      if (f.cur === i) cls = 'cur';
+      s += R(x, y, w, 128, cls, 10);
+      if (f.hl === i) s += R(x - 4, y - 4, w + 8, 136, 'mark', 12);
+      s += T(x + w / 2, y + 22, `盒子 ${i}`, 'tb', MID);
+      s += T(x + w / 2, y + 44, f.status[i] ? '开 / 有钥匙' : '锁着', f.status[i] ? '' : 'tm', MID);
+      s += T(x + w / 2, y + 68, `糖 ${f.candies[i]}`, '', MID);
+      s += T(x + w / 2, y + 92, `钥匙 [${f.keys[i]}]`, 'tm', MID);
+      s += T(x + w / 2, y + 112, `装着 [${f.contained[i]}]`, 'tm', MID);
+      s += T(x + w / 2, y + 148, f.opened.includes(i) ? '已打开' : owned ? '已拥有' : '未拥有', 'tm', MID);
+    }
+    s += T(40, 222, '队列', 'tl');
+    f.q.forEach((b, j) => { s += R(84 + j * 40, 206, 32, 26, 'acc', 6) + T(100 + j * 40, 224, b, 'tb', MID); });
+    if (!f.q.length) s += T(84, 224, '空', 'tm');
+    s += T(720, 228, `糖果 ${f.total}`, 'big', END);
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '631', title: 'Design Excel Sum Formula', short: 'Excel Sum Formula', diff: 'H', freq: 76.4, both: false, slug: 'design-excel-sum-formula',
+  idea: '<b>思路：</b>公式格子不存结果，只存“引用了哪些格子、各引用几次”（Counter）。get 时递归求值，所以被引用的格子改了，公式自动跟着变；set 一个格子时要清掉它原来的公式。注意 "A1:B2" 和 "A1" 可以重叠，重叠的格子要算两次。',
+  code: `class Excel:
+    def __init__(self, height, width):
+        self.val = {}                     # 格子 -> 数值
+        self.formula = {}                 # 格子 -> Counter(引用格子 -> 次数)
+
+    def set(self, row, col, v):
+        self.formula.pop((row, col), None)
+        self.val[(row, col)] = v
+
+    def get(self, row, col):
+        if (row, col) in self.formula:
+            return sum(self.get(*cell) * k
+                       for cell, k in self.formula[(row, col)].items())
+        return self.val.get((row, col), 0)
+
+    def sum(self, row, col, numbers):
+        cnt = Counter()
+        for ref in numbers:               # "A1" 或 "A1:B2"
+            for cell in expand(ref):
+                cnt[cell] += 1
+        self.formula[(row, col)] = cnt
+        return self.get(row, col)`,
+  examples: [{ label: 'LeetCode 示例', args: { H: 3, W: 3, ops: [['set', 1, 'A', 2], ['sum', 3, 'C', ['A1', 'A1:B2']], ['set', 2, 'B', 2], ['get', 3, 'C']] } },
+             { label: '公式引用公式', args: { H: 3, W: 3, ops: [['set', 1, 'A', 1], ['sum', 2, 'B', ['A1']], ['sum', 3, 'C', ['A1:B2']], ['set', 1, 'A', 5], ['get', 3, 'C']] } }],
+  view: [760, 230],
+  run({ H, W, ops }) {
+    const F = [], val = {}, formula = {};
+    const evalQ = k => formula[k] ? Object.entries(formula[k]).reduce((a, [c, m]) => a + evalQ(c) * m, 0) : (val[k] || 0);
+    const disp = () => { const o = {}; for (let r = 1; r <= H; r++) for (let ci = 0; ci < W; ci++) { const k = String.fromCharCode(65 + ci) + r; o[k] = evalQ(k); } return o; };
+    let curOp = `Excel(${H}, "${String.fromCharCode(64 + W)}")`;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, H, W, disp: disp(), formula: JSON.parse(JSON.stringify(formula)), op: curOp, ...ex, vars: { 操作: curOp, ...(ex.v || {}) } });
+    snap(2, `${curOp}：一个空表格，每格默认是 0。`);
+    const evalFrames = (k, isSum) => {
+      const total = evalQ(k); let acc = 0;
+      if (formula[k]) {
+        snap(11, `get ${k}：它是公式，按引用逐个求值。`, { cur: k, refs: formula[k] });
+        for (const [c, m] of Object.entries(formula[k])) { const v = evalQ(c); acc += v * m;
+          snap(12, `${c} = ${v}${formula[c] ? `（${c} 本身也是公式，递归求出）` : ''}${m > 1 ? `，被引用 ${m} 次，贡献 ${v * m}` : ''}，累计 ${acc}。`, { cur: k, refs: formula[k], hl: c, v: { 累计: acc } }); }
+      } else snap(14, `get ${k}：普通数值 ${total}。`, { cur: k });
+      snap(isSum ? 22 : 12, `${curOp} 返回 ${total}。`, { cur: k, refs: formula[k], v: { 返回: total } });
+    };
+    for (const op of ops) {
+      curOp = fmtOp(op);
+      if (op[0] === 'set') { const [, r, c, v] = op, k = c + r, had = !!formula[k]; delete formula[k]; val[k] = v;
+        snap(had ? 7 : 8, `${curOp}：${k} = ${v}${had ? '，原来的公式被清掉' : ''}。引用 ${k} 的公式会自动跟着变。`, { cur: k }); }
+      else if (op[0] === 'sum') { const [, r, c, refs] = op, k = c + r, cnt = {};
+        for (const ref of refs) for (const cell of expand(ref)) { cnt[cell] = (cnt[cell] || 0) + 1;
+          snap(20, `"${ref}" 展开出 ${cell}，${cell} 计数 ${cnt[cell]}。`, { cur: k, refs: { ...cnt }, hl: cell }); }
+        formula[k] = cnt;
+        snap(21, `${k} 存成公式 ${Object.entries(cnt).map(([c, m]) => m > 1 ? `${m}×${c}` : c).join(' + ')}。只存引用，不存结果。`, { cur: k, refs: cnt });
+        evalFrames(k, true); }
+      else evalFrames(op[2] + op[1], false);
+    }
+    return F;
+  },
+  render(f) {
+    let s = ''; const X0 = 50, Y0 = 34, cw = 100, ch = 46;
+    s += T(20, 20, f.op, 'tb');
+    for (let ci = 0; ci < f.W; ci++) s += T(X0 + ci * cw + cw / 2, Y0 - 6, String.fromCharCode(65 + ci), 'tm', MID);
+    for (let r = 1; r <= f.H; r++) {
+      s += T(X0 - 12, Y0 + (r - 1) * ch + 28, r, 'tm', END);
+      for (let ci = 0; ci < f.W; ci++) {
+        const k = String.fromCharCode(65 + ci) + r, x = X0 + ci * cw, y = Y0 + (r - 1) * ch, isF = !!f.formula[k];
+        let cls = 'cell';
+        if (f.refs && f.refs[k]) cls = 'acc';
+        if (f.cur === k) cls = 'cur';
+        s += R(x, y, cw - 4, ch - 4, cls, 4) + T(x + 8, y + 15, k, 'tm') + T(x + cw - 12, y + 32, (isF ? 'Σ ' : '') + f.disp[k], 'tb', END);
+        if (f.refs && f.refs[k] > 1) s += R(x + 4, y + 22, 26, 16, 'soft', 8) + T(x + 17, y + 34, `×${f.refs[k]}`, 'tm', MID);
+        if (f.hl === k) s += R(x - 3, y - 3, cw + 2, ch + 2, 'mark', 6);
+      }
+    }
+    const fx = X0 + f.W * cw + 40; let fy = Y0 + 12;
+    s += T(fx, fy, '公式（只存引用）', 'tl'); fy += 26;
+    const fs = Object.entries(f.formula);
+    if (!fs.length) s += T(fx, fy, '暂无', 'tm');
+    fs.forEach(([k, cnt]) => { s += T(fx, fy, `${k} = ${Object.entries(cnt).map(([c, m]) => m > 1 ? `${m}×${c}` : c).join(' + ')}`, ''); fy += 22; });
+    return s;
+  } },
+];
+
+/* ---------- app ---------- */
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const S = { p: null, ex: 0, frames: [], i: 0, timer: null };
+const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+
+function hl(line) {
+  const e = esc(line), h = e.indexOf('#');
+  const kw = t => t.replace(/\b(def|class|return|for|in|if|while|not|and|or|continue|None|True|False|lambda)\b/g, '<span class="kw">$1</span>');
+  return h < 0 ? kw(e) : kw(e.slice(0, h)) + `<span class="cm">${e.slice(h)}</span>`;
+}
+
+function buildList() {
+  const both = PROBLEMS.filter(p => p.both), rest = PROBLEMS.filter(p => !p.both);
+  const item = p => `<button class="item" data-id="${p.id}"><span class="no">${p.id}</span><span class="nm">${esc(p.short || p.title)}${p.both ? ' <span class="star">★</span>' : ''}</span><span class="meta">${p.diff === 'H' ? 'Hard' : 'Medium'} · ${p.freq}%</span></button>`;
+  $('#list').innerHTML = `<h2>两份清单都有</h2>${both.map(item).join('')}<h2>频率最高、还没做</h2>${rest.map(item).join('')}`;
+  $('#list').addEventListener('click', e => { const b = e.target.closest('.item'); if (b) select(b.dataset.id, 0); });
+}
+
+function select(id, ex) {
+  const p = PROBLEMS.find(x => x.id === id) || PROBLEMS[0];
+  S.p = p; S.ex = ex; S.frames = p.run(p.examples[ex].args); S.i = 0;
+  store.set('airbnb-viz-p', p.id);
+  if (location.hash !== '#p' + p.id) history.replaceState(null, '', '#p' + p.id);
+  document.querySelectorAll('.item').forEach(b => b.setAttribute('aria-current', b.dataset.id === p.id));
+  $('#head').innerHTML = `<h2>${p.id}. ${esc(p.title)}</h2><span class="chip ${p.diff}">${p.diff === 'H' ? 'Hard' : 'Medium'}</span><span class="chip">频率 ${p.freq}%</span>${p.both ? '<span class="chip both">★ 面经也有</span>' : ''}<a href="https://leetcode.com/problems/${p.slug}/" target="_blank" rel="noopener">在 LeetCode 打开 ↗</a>`;
+  $('#idea').innerHTML = p.idea;
+  $('#examples').innerHTML = '<span>示例</span>' + p.examples.map((e, i) => `<button class="ex" data-i="${i}" aria-pressed="${i === ex}">${esc(e.label)}</button>`).join('');
+  $('#code').innerHTML = p.code.split('\n').map((l, i) => `<div class="ln" data-n="${i + 1}"><span class="n">${i + 1}</span><span>${hl(l) || ' '}</span></div>`).join('');
+  $('#scrub').max = S.frames.length - 1;
+  stop(); draw();
+  if (!reduced) play();
+}
+
+function draw() {
+  const f = S.frames[S.i], p = S.p;
+  $('#stage').innerHTML = `<svg viewBox="0 0 ${p.view[0]} ${p.view[1]}" role="img" aria-label="${esc(p.title)} 第 ${S.i + 1} 步">${DEFS}${p.render(f)}</svg>`;
+  $('#msg').innerHTML = `<span class="stepn">STEP ${S.i + 1}</span>${esc(f.msg)}`;
+  $('#count').textContent = `${S.i + 1} / ${S.frames.length}`;
+  $('#scrub').value = S.i;
+  const pane = $('#code');
+  pane.querySelectorAll('.ln.on').forEach(x => x.classList.remove('on'));
+  const ln = pane.querySelector(`.ln[data-n="${f.line}"]`);
+  if (ln) { ln.classList.add('on'); const t = ln.offsetTop - pane.clientHeight / 2 + ln.clientHeight; pane.scrollTop = Math.max(0, t); }
+  $('#vars').innerHTML = Object.entries(f.vars || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+}
+
+function go(i) { S.i = Math.max(0, Math.min(S.frames.length - 1, i)); draw(); }
+function play() {
+  if (S.i >= S.frames.length - 1) S.i = 0;
+  stop(); $('#play').textContent = '暂停'; $('#play').setAttribute('aria-label', '暂停');
+  const tick = () => { if (S.i >= S.frames.length - 1) { stop(); return; } go(S.i + 1); S.timer = setTimeout(tick, 1100 / +$('#speed').value); };
+  S.timer = setTimeout(tick, 1100 / +$('#speed').value);
+}
+function stop() { clearTimeout(S.timer); S.timer = null; $('#play').textContent = '播放'; $('#play').setAttribute('aria-label', '播放'); }
+
+$('#play').onclick = () => S.timer ? stop() : play();
+$('#next').onclick = () => { stop(); go(S.i + 1); };
+$('#prev').onclick = () => { stop(); go(S.i - 1); };
+$('#reset').onclick = () => { stop(); go(0); };
+$('#scrub').oninput = e => { stop(); go(+e.target.value); };
+$('#examples').addEventListener('click', e => { const b = e.target.closest('.ex'); if (b) select(S.p.id, +b.dataset.i); });
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input, select, textarea')) return;
+  if (e.key === 'ArrowRight') { e.preventDefault(); stop(); go(S.i + 1); }
+  else if (e.key === 'ArrowLeft') { e.preventDefault(); stop(); go(S.i - 1); }
+  else if (e.key === ' ' && !e.target.matches('button')) { e.preventDefault(); S.timer ? stop() : play(); }
+});
+
+buildList();
+const fromHash = location.hash.replace('#p', '');
+select(PROBLEMS.some(p => p.id === fromHash) ? fromHash : (store.get('airbnb-viz-p') || '751'), 0);
+</script>
