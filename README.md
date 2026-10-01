@@ -6,8 +6,8 @@ About 660 Python solutions (plus a few SQL ones), grouped by topic, with company
 
 **[▶ Open the visualizer](https://lyr-ai.github.io/leetcode/airbnb/)**
 
-Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo, plus
-solved ones for review. Every frame highlights the matching line of Python and shows the variables at that
+Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo, plus the 11
+already solved in `airbnb/` for review. Every frame highlights the matching line of Python and shows the variables at that
 moment. Use `←` `→` to step and `Space` to play or pause.
 
 | # | Problem | Difficulty | Airbnb frequency |
@@ -21,8 +21,23 @@ moment. Use `←` `→` to step and `Space` to play or pause.
 | 1298 | [Maximum Candies You Can Get from Boxes](https://lyr-ai.github.io/leetcode/airbnb/#p1298) | Hard | 84% |
 | 631 | [Design Excel Sum Formula](https://lyr-ai.github.io/leetcode/airbnb/#p631) | Hard | 76% |
 
-Also included for review: [1109 Corporate Flight Bookings](https://lyr-ai.github.io/leetcode/airbnb/#p1109)
-(difference array), animated from this repo's own solution in `airbnb/1109_corp_flight_bookings.py`.
+### Review set: already solved in `airbnb/`
+
+Animated from this repo's own solutions (docstrings removed). Notes mark where the page deviates.
+
+| # | Problem | Difficulty | Airbnb frequency | Note |
+|---|---|---|---|---|
+| 251 | [Flatten 2D Vector](https://lyr-ai.github.io/leetcode/airbnb/#p251) | Medium | 86% |  |
+| 336 | [Palindrome Pairs](https://lyr-ai.github.io/leetcode/airbnb/#p336) | Hard | 85% | Python 2 `/` shown as `//` |
+| 755 | [Pour Water](https://lyr-ai.github.io/leetcode/airbnb/#p755) | Medium | 79% |  |
+| 773 | [Sliding Puzzle](https://lyr-ai.github.io/leetcode/airbnb/#p773) | Hard | 78% | BFS layers + shortest-path replay |
+| 269 | [Alien Dictionary](https://lyr-ai.github.io/leetcode/airbnb/#p269) | Hard | 75% | Shows standard Kahn topological sort; the repo version only works when constraints form a single chain |
+| 787 | [Cheapest Flights Within K Stops](https://lyr-ai.github.io/leetcode/airbnb/#p787) | Medium | 71% |  |
+| 1166 | [Design File System](https://lyr-ai.github.io/leetcode/airbnb/#p1166) | Medium | 69% |  |
+| 1109 | [Corporate Flight Bookings](https://lyr-ai.github.io/leetcode/airbnb/#p1109) | Medium | — | Difference array |
+| 295 | [Find Median from Data Stream](https://lyr-ai.github.io/leetcode/airbnb/#p295) | Hard | — | Relies on Python 2 `None < int`; page shows the Python 3 fix |
+| 374 | [Guess Number Higher or Lower](https://lyr-ai.github.io/leetcode/airbnb/#p374) | Easy | — | Python 2 `/` shown as `//` |
+| 1500 | [Design a File Sharing System](https://lyr-ai.github.io/leetcode/airbnb/#p1500) | Medium | — |  |
 
 Frequencies come from LeetCode company-tag statistics ([codejeet](https://codejeet.com/company/airbnb)).
 ★ means the problem also appears in the most widely shared list of Airbnb interview questions

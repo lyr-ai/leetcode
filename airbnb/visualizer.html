@@ -48,6 +48,7 @@ main{display:flex;flex-direction:column;gap:16px;min-width:0}
 .chip{font:500 12px var(--mono);padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
 .chip.H{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
 .chip.M{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,var(--line))}
+.chip.E{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
 .chip.both{color:var(--amber);border-color:var(--amber)}
 .head a{font-size:13px;color:var(--acc);margin-left:auto}
 .idea{margin:0;max-width:78ch;color:var(--ink)}
@@ -99,6 +100,7 @@ svg .bad{fill:var(--bad-bg);stroke:var(--bad);stroke-width:1.8}
 svg .soft{fill:var(--amber-bg);stroke:var(--line)}
 svg .dim{fill:var(--surface);stroke:var(--line);stroke-dasharray:4 3}
 svg .ghost{fill:none;stroke:var(--line);stroke-dasharray:4 3}
+svg .ground{fill:var(--line);stroke:var(--muted);stroke-width:.6}
 svg .cand{fill:none;stroke:var(--amber);stroke-width:2.2;stroke-dasharray:6 4}
 svg .mark{fill:none;stroke:var(--amber);stroke-width:2.5}
 svg .axis{stroke:var(--line);stroke-width:2}
@@ -122,7 +124,7 @@ svg .ahp2{fill:var(--amber)}
 <div class="wrap">
   <header>
     <h1>Airbnb 高频题，一步一步看</h1>
-    <p>你的 repo 里还没做的 8 道高频题，加上已经做过、拿来复习的题。每一帧对应下方代码里高亮的那一行，右侧是这一刻的变量。
+    <p>你的 repo 里还没做的 8 道高频题，加上 <code>airbnb/</code> 里已经做过的 11 道（复习组）。每一帧对应下方代码里高亮的那一行，右侧是这一刻的变量。
       <kbd>←</kbd> <kbd>→</kbd> 单步，<kbd>空格</kbd> 播放 / 暂停。</p>
   </header>
 
@@ -163,6 +165,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 const T = (x, y, s, cls = '', a = '') => `<text x="${x}" y="${y}" ${cls ? `class="${cls}"` : ''} ${a}>${esc(s)}</text>`;
 const R = (x, y, w, h, cls, rx = 6) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" class="${cls}"/>`;
 const MID = 'text-anchor="middle"', END = 'text-anchor="end"';
+const DIFF = { E: 'Easy', M: 'Medium', H: 'Hard' };
 const DEFS = `<defs>
  <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahp"/></marker>
  <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahp2"/></marker></defs>`;
@@ -770,6 +773,684 @@ const PROBLEMS = [
     s += T(X0, yA + 92, f.phase === 'diff' ? '阶段 1：差分。每条预订只改两个点（绿色 +，红色 −）' : '阶段 2：前缀和。青色部分已经是最终座位数', 'tl');
     return s;
   } },
+/* ======================================================================= */
+{ id: '251', title: 'Flatten 2D Vector', diff: 'M', freq: 85.9, solved: true, slug: 'flatten-2d-vector',
+  idea: '<b>思路：</b>两个指针：i1 指向第几个子列表，i2 指向子列表里的第几个。关键是 _moveToValid：构造时和每次 next 之后，都把指针推到下一个真实存在的元素，跳过空列表和已经用完的列表。这样 hasNext 只要看 i1 有没有越界。',
+  code: `class Vector2D(object):
+    def __init__(self, vec2d):
+        self.vec2d = vec2d
+        self.i1 = 0 # outer level index
+        self.i2 = 0 # inner level index
+        self._moveToValid()
+
+    def _moveToValid(self):
+        while self.i1 < len(self.vec2d) and self.i2 >= len(self.vec2d[self.i1]):
+            self.i1 += 1
+            self.i2 = 0
+
+    def next(self):
+        ret = self.vec2d[self.i1][self.i2]
+        self.i2 += 1
+        self._moveToValid()
+        return ret
+
+    def hasNext(self):
+        return self.i1 < len(self.vec2d)`,
+  examples: [{ label: '[[1,2],[3],[4]]', args: { vec: [[1, 2], [3], [4]], ops: ['next', 'next', 'next', 'hasNext', 'hasNext', 'next', 'hasNext'] } },
+             { label: '带空列表', args: { vec: [[], [1], [], [], [2, 3], []], ops: ['hasNext', 'next', 'next', 'next', 'hasNext'] } }],
+  view: [760, 300],
+  run({ vec, ops }) {
+    const F = [], out = []; let i1 = 0, i2 = 0, opLabel = 'Vector2D(vec2d)';
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, vec, i1, i2, out: [...out], ...ex, vars: { 操作: opLabel, i1, i2, 已返回: out.join(', ') || '∅' } });
+    const move = () => {
+      snap(9, i1 >= vec.length ? `i1 = ${i1} 已经越界，不用再移动。` : i2 >= vec[i1].length ? `子列表 ${i1} 没有下标 ${i2} 的元素，需要跳过。` : `位置 (${i1}, ${i2}) 有效。`, { check: true });
+      while (i1 < vec.length && i2 >= vec[i1].length) { i1++; i2 = 0;
+        snap(10, i1 < vec.length ? `跳到子列表 i1 = ${i1}，i2 = 0。` : `i1 = ${i1}，已经过了最后一个子列表。`, { check: true }); }
+    };
+    snap(5, 'i1 = 0, i2 = 0，然后先把指针移到第一个有效元素。'); move();
+    for (const op of ops) {
+      opLabel = op + '()';
+      if (op === 'next') { const v = vec[i1][i2];
+        snap(14, `next()：读出 vec2d[${i1}][${i2}] = ${v}。`, { read: true }); i2++;
+        snap(15, `i2 加 1，变成 ${i2}。`); move(); out.push(v); snap(17, `返回 ${v}。`); }
+      else snap(20, `hasNext()：i1 = ${i1}，子列表共 ${vec.length} 个，返回 ${i1 < vec.length ? 'True' : 'False'}。`, { has: i1 < vec.length });
+    }
+    return F;
+  },
+  render(f) {
+    let s = ''; const X0 = 110, cw = 54;
+    f.vec.forEach((row, r) => {
+      const y = 20 + r * 38;
+      s += T(X0 - 14, y + 21, `[${r}]`, r === f.i1 ? 'tb' : 'tm', END);
+      if (!row.length) s += R(X0, y, cw - 6, 30, 'ghost', 6) + T(X0 + (cw - 6) / 2, y + 20, '空', 'tm', MID);
+      row.forEach((v, c) => {
+        let cls = 'cell';
+        if (r < f.i1 || (r === f.i1 && c < f.i2)) cls = 'ok';
+        if (r === f.i1 && c === f.i2) cls = f.read ? 'cur' : 'acc';
+        s += R(X0 + c * cw, y, cw - 6, 30, cls, 6) + T(X0 + c * cw + (cw - 6) / 2, y + 20, v, 'tb', MID);
+      });
+      if (f.check && r === f.i1 && f.i2 >= row.length) s += R(X0 + f.i2 * cw, y, cw - 6, 30, 'bad', 6) + T(X0 + f.i2 * cw + (cw - 6) / 2, y + 20, '×', 'tb', MID);
+    });
+    if (f.i1 >= f.vec.length) s += T(X0, 20 + f.vec.length * 38 + 16, 'i1 越界：后面没有元素了', 'tl');
+    s += T(520, 40, '绿色 = 已经返回过', 'tm') + T(520, 60, '青色 = 指针当前位置', 'tm') + T(520, 80, '红色 = 越界，需要跳过', 'tm');
+    s += T(24, 286, '返回', 'tl');
+    f.out.forEach((v, j) => { s += R(70 + j * 40, 268, 32, 26, 'ok', 6) + T(86 + j * 40, 286, v, 'tb', MID); });
+    if (f.has !== undefined) s += T(736, 286, `hasNext → ${f.has ? 'True' : 'False'}`, 'big', END);
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '269', title: 'Alien Dictionary', diff: 'H', freq: 74.8, solved: true, slug: 'alien-dictionary',
+  idea: '<b>思路：</b>相邻两个单词第一个不同的字母给出一条顺序 x → y。所有约束建成图后做 BFS 拓扑排序（Kahn）：反复取出入度为 0 的字母。排不完说明有环，返回 ""；前一个单词是后一个的更长前缀（"abc" 排在 "ab" 前）也非法。<br><b>注意：</b>repo 里 <code>269_alien_dictionary.py</code> 的拓扑部分只在所有约束连成一条链时正确：一个字母有多个前驱、或有不出现在约束里的字母时，会排错甚至死循环。这里演示的是标准写法。',
+  code: `def alienOrder(words):
+    graph = {c: set() for w in words for c in w}
+    indeg = {c: 0 for c in graph}
+    for a, b in zip(words, words[1:]):
+        for x, y in zip(a, b):
+            if x != y:                      # 第一个不同的字母：x 在 y 前面
+                if y not in graph[x]:
+                    graph[x].add(y); indeg[y] += 1
+                break
+        else:
+            if len(a) > len(b): return ""   # "abc" 排在 "ab" 前面，非法
+    q = deque(c for c in graph if indeg[c] == 0)
+    order = []
+    while q:
+        c = q.popleft(); order.append(c)
+        for d in graph[c]:
+            indeg[d] -= 1
+            if indeg[d] == 0: q.append(d)
+    return "".join(order) if len(order) == len(graph) else ""`,
+  examples: [{ label: 'wrt … rftt → "wertf"', args: { words: ['wrt', 'wrf', 'er', 'ett', 'rftt'] } },
+             { label: 'z, x, z → ""（有环）', args: { words: ['z', 'x', 'z'] } },
+             { label: 'abc, ab → ""（非法）', args: { words: ['abc', 'ab'] } }],
+  view: [760, 300],
+  run({ words }) {
+    const F = [], chars = []; words.forEach(w => [...w].forEach(c => { if (!chars.includes(c)) chars.push(c); }));
+    const graph = {}, indeg = {}; chars.forEach(c => { graph[c] = []; indeg[c] = 0; });
+    let order = [], q = [];
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, words, chars, graph: JSON.parse(JSON.stringify(graph)), indeg: { ...indeg }, order: [...order], q: [...q], ...ex,
+      vars: { 边: chars.flatMap(c => graph[c].map(d => c + '→' + d)).join(' ') || '∅', 入度: chars.map(c => c + ':' + indeg[c]).join(' '), 队列: q.join(' ') || '∅', order: order.join('') || '∅' } });
+    snap(3, `出现的字母：${chars.join(' ')}。先建一个没有边的图。`);
+    for (let p = 0; p < words.length - 1; p++) {
+      const a = words[p], b = words[p + 1]; let found = false;
+      for (let k = 0; k < Math.min(a.length, b.length); k++) {
+        if (a[k] === b[k]) continue;
+        const x = a[k], y = b[k]; found = true;
+        if (!graph[x].includes(y)) { graph[x].push(y); indeg[y]++; snap(8, `"${a}" 和 "${b}" 第一个不同在位置 ${k}：${x} 在 ${y} 前面，加边 ${x} → ${y}。`, { pair: p, pos: k, edge: [x, y] }); }
+        else snap(7, `"${a}" 和 "${b}"：${x} → ${y} 这条边已经有了。`, { pair: p, pos: k, edge: [x, y] });
+        break;
+      }
+      if (!found) {
+        if (a.length > b.length) { snap(11, `"${a}" 排在它的前缀 "${b}" 前面，字典不合法，返回 ""。`, { pair: p, bad: true, done: true }); return F; }
+        snap(10, `"${a}" 和 "${b}" 没有不同的字母，得不到顺序信息。`, { pair: p });
+      }
+    }
+    q = chars.filter(c => indeg[c] === 0); snap(12, `入度为 0 的字母入队：[${q.join(', ')}]。`);
+    while (q.length) {
+      const c = q.shift(); order.push(c); snap(15, `取出 ${c}，排在第 ${order.length} 位。`, { cur: c });
+      for (const d of graph[c]) { indeg[d]--; if (indeg[d] === 0) q.push(d);
+        snap(indeg[d] === 0 ? 18 : 17, `${c} → ${d}：${d} 的入度减到 ${indeg[d]}${indeg[d] === 0 ? '，入队' : ''}。`, { cur: c, edge: [c, d], hot: d }); }
+    }
+    const ok = order.length === chars.length;
+    snap(19, ok ? `全部排完，返回 "${order.join('')}"。` : `只排出 ${order.length}/${chars.length} 个字母，剩下的互相依赖成环，返回 ""。`, { done: true, fail: !ok });
+    return F;
+  },
+  render(f) {
+    let s = T(24, 22, '单词（按外星字典序排好）', 'tl');
+    f.words.forEach((w, i) => {
+      const y = 48 + i * 32, inPair = f.pair !== undefined && (i === f.pair || i === f.pair + 1);
+      s += T(24, y, i, 'tm');
+      [...w].forEach((ch, k) => {
+        let cls = inPair ? 'acc' : 'cell';
+        if (inPair && f.pos === k) cls = 'cur';
+        if (inPair && f.bad) cls = 'bad';
+        s += R(44 + k * 24, y - 16, 20, 22, cls, 4) + T(54 + k * 24, y, ch, 'tb', MID);
+      });
+    });
+    const n = f.chars.length, cx = 500, cy = 140, rad = Math.min(100, 34 + n * 12), P = {};
+    f.chars.forEach((c, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; P[c] = [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; });
+    f.chars.forEach(c => f.graph[c].forEach(d => {
+      const [x1, y1] = P[c], [x2, y2] = P[d], L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, hot = f.edge && f.edge[0] === c && f.edge[1] === d;
+      s += `<line x1="${x1 + ux * 20}" y1="${y1 + uy * 20}" x2="${x2 - ux * 23}" y2="${y2 - uy * 23}" class="edge${hot ? ' hot' : ''}" marker-end="url(#${hot ? 'ah2' : 'ah'})"/>`;
+    }));
+    f.chars.forEach(c => {
+      const [x, y] = P[c]; let cls = 'cell';
+      if (f.q.includes(c)) cls = 'acc';
+      if (f.order.includes(c)) cls = 'ok';
+      if (f.cur === c || f.hot === c) cls = 'cur';
+      if (f.fail && !f.order.includes(c)) cls = 'bad';
+      s += `<circle cx="${x}" cy="${y}" r="19" class="${cls}"/>` + T(x, y + 5, c, 'tb', MID) + T(x + 22, y - 14, 'in ' + f.indeg[c], 'tm');
+    });
+    s += T(24, 286, '顺序', 'tl');
+    f.order.forEach((c, j) => { s += R(70 + j * 34, 268, 28, 26, 'ok', 6) + T(84 + j * 34, 286, c, 'tb', MID); });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '295', title: 'Find Median from Data Stream', short: 'Median from Data Stream', diff: 'H', freq: null, solved: true, slug: 'find-median-from-data-stream',
+  idea: '<b>思路：</b>两个堆把数据分成两半：maxHeap（存负数）装较小的一半，minHeap 装较大的一半，并保持 maxHeap 最多比 minHeap 多 1 个。中位数只看两个堆顶。新数先进 maxHeap；如果它比 minHeap 堆顶还大，或者 maxHeap 多太多，就把 maxHeap 堆顶挪过去，最后再平衡个数。<br><b>注意：</b>第 10 行在 minHeap 为空时比较 <code>None &lt; 数字</code>，只有 Python 2 能跑（结果为 True），动画按这个语义演示。Python 3 要写成 <code>(minTop is not None and minTop &lt; -maxTop) or …</code>。',
+  code: `class MedianFinder:
+    def __init__(self):
+        self.minHeap = []
+        self.maxHeap = []
+
+    def addNum(self, num):
+        heappush(self.maxHeap, -num)
+        minTop = self.minHeap[0] if len(self.minHeap) else None
+        maxTop = self.maxHeap[0] if len(self.maxHeap) else None
+        if minTop < -maxTop or len(self.minHeap) + 1 < len(self.maxHeap):
+            heappush(self.minHeap, -heappop(self.maxHeap))
+        if len(self.maxHeap) < len(self.minHeap):
+            heappush(self.maxHeap, -heappop(self.minHeap))
+
+    def findMedian(self):
+        if len(self.minHeap) < len(self.maxHeap):
+            return -1.0 * self.maxHeap[0]
+        else:
+            return (self.minHeap[0] - self.maxHeap[0]) / 2.0`,
+  examples: [{ label: 'add 1, 2 → 1.5；add 3 → 2', args: { ops: [['add', 1], ['add', 2], ['med'], ['add', 3], ['med']] } },
+             { label: '5, 15, 1, 3, 8, 7', args: { ops: [['add', 5], ['med'], ['add', 15], ['med'], ['add', 1], ['med'], ['add', 3], ['med'], ['add', 8], ['med'], ['add', 7], ['med']] } }],
+  view: [760, 250],
+  run({ ops }) {
+    const F = [], lo = [], hi = []; let opLabel = 'MedianFinder()';
+    const up = a => [...a].sort((x, y) => x - y);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, lo: up(lo), hi: up(hi), ...ex,
+      vars: { 操作: opLabel, '较小一半 maxHeap': `[${up(lo).reverse().join(', ')}]`, '较大一半 minHeap': `[${up(hi).join(', ')}]`, ...(ex.v || {}) } });
+    snap(3, '两个空堆：maxHeap 装较小的一半，minHeap 装较大的一半。');
+    for (const op of ops) {
+      if (op[0] === 'add') {
+        const x = op[1]; opLabel = `addNum(${x})`;
+        lo.push(x); snap(7, `${x} 先放进 maxHeap（较小的一半）。`, { cur: x });
+        const minTop = hi.length ? Math.min(...hi) : null, maxTop = Math.max(...lo);
+        const c1 = minTop === null ? true : minTop < maxTop, c2 = hi.length + 1 < lo.length;
+        snap(10, (minTop === null ? 'minHeap 为空，minTop 是 None；Python 2 里 None < 任何数都为 True。'
+          : `minHeap 堆顶 ${minTop}，maxHeap 堆顶 ${maxTop}：${c1 ? `${minTop} < ${maxTop}，较小一半里混进了大数。` : '顺序没问题。'}`) + (c2 ? ' maxHeap 比 minHeap 多了 2 个。' : ''), { cur: x, v: { 条件: c1 || c2 ? 'True' : 'False' } });
+        if (c1 || c2) { const m = Math.max(...lo); lo.splice(lo.indexOf(m), 1); hi.push(m); snap(11, `把 maxHeap 堆顶 ${m} 挪到 minHeap。`, { cur: m }); }
+        if (lo.length < hi.length) { const m = Math.min(...hi); hi.splice(hi.indexOf(m), 1); lo.push(m); snap(13, `minHeap 比 maxHeap 多，把它的堆顶 ${m} 挪回来。`, { cur: m }); }
+      } else {
+        opLabel = 'findMedian()';
+        const odd = hi.length < lo.length, med = odd ? Math.max(...lo) : (Math.min(...hi) + Math.max(...lo)) / 2;
+        snap(odd ? 17 : 19, odd ? `个数是奇数，中位数就是 maxHeap 堆顶 ${med}。` : `个数是偶数，中位数 = (${Math.max(...lo)} + ${Math.min(...hi)}) / 2 = ${med}。`, { med, v: { 返回: med } });
+      }
+    }
+    return F;
+  },
+  render(f) {
+    let s = ''; const cx = 380, cw = 46, y = 86;
+    s += T(cx - 24, 60, 'maxHeap：较小的一半', 'tl', END) + T(cx + 24, 60, 'minHeap：较大的一半', 'tl');
+    s += `<line x1="${cx}" y1="72" x2="${cx}" y2="146" class="tick" stroke-dasharray="4 3"/>`;
+    f.lo.forEach((v, i) => { const x = cx - 20 - (f.lo.length - i) * cw; let cls = i === f.lo.length - 1 ? 'acc' : 'cell'; if (v === f.cur) cls = 'cur';
+      s += R(x, y, cw - 6, 40, cls, 6) + T(x + (cw - 6) / 2, y + 25, v, 'tb', MID); });
+    f.hi.forEach((v, i) => { const x = cx + 20 + i * cw; let cls = i === 0 ? 'acc' : 'cell'; if (v === f.cur) cls = 'cur';
+      s += R(x, y, cw - 6, 40, cls, 6) + T(x + (cw - 6) / 2, y + 25, v, 'tb', MID); });
+    s += T(cx - 24, 150, `${f.lo.length} 个`, 'tm', END) + T(cx + 24, 150, `${f.hi.length} 个`, 'tm');
+    if (f.med !== undefined) s += T(cx, 206, `中位数 = ${f.med}`, 'big', MID);
+    s += T(24, 238, '青色 = 堆顶，中位数只看这两个数', 'tm');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '336', title: 'Palindrome Pairs', diff: 'H', freq: 84.9, solved: true, slug: 'palindrome-pairs',
+  idea: '<b>思路：</b>建哈希表 单词 → 下标。把每个单词切成 left + right：如果 left 是回文，并且 right 的反转在表里，那么 reverse(right) + word 是回文；如果 right 是回文，并且 left 的反转在表里，那么 word + reverse(left) 是回文。整词反转和空串单独处理。复杂度 O(n·k²)。（repo 里是 Python 2 的 <code>size / 2</code>，这里写成 <code>//</code>。）',
+  code: `class Solution(object):
+    def palindromePairs(self, words):
+        wmap = {y : x for x, y in enumerate(words)}
+
+        def isPalindrome(word):
+            size = len(word)
+            for x in range(size // 2):
+                if word[x] != word[size - x - 1]:
+                    return False
+            return True
+
+        ans = set()
+        for idx, word in enumerate(words):
+            if "" in wmap and word != "" and isPalindrome(word):
+                bidx = wmap[""]
+                ans.add((bidx, idx))
+                ans.add((idx, bidx))
+
+            rword = word[::-1]
+            if rword in wmap:
+                ridx = wmap[rword]
+                if idx != ridx:
+                    ans.add((idx, ridx))
+                    ans.add((ridx, idx))
+
+            for x in range(1, len(word)):
+                left, right = word[:x], word[x:]
+                rleft, rright = left[::-1], right[::-1]
+                if isPalindrome(left) and rright in wmap:
+                    ans.add((wmap[rright], idx))
+                if isPalindrome(right) and rleft in wmap:
+                    ans.add((idx, wmap[rleft]))
+        return list(ans)`,
+  examples: [{ label: 'abcd, dcba, lls, s, sssll', args: { words: ['abcd', 'dcba', 'lls', 's', 'sssll'] } },
+             { label: 'bat, tab, cat', args: { words: ['bat', 'tab', 'cat'] } },
+             { label: 'a, ""', args: { words: ['a', ''] } }],
+  view: [760, 300],
+  run({ words }) {
+    const F = [], wmap = new Map(words.map((w, i) => [w, i])), ans = [];
+    const add = (a, b) => { if (!ans.some(p => p[0] === a && p[1] === b)) ans.push([a, b]); };
+    const rev = w => [...w].reverse().join(''), isPal = w => w === rev(w);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, words, ans: ans.map(p => [...p]), ...ex,
+      vars: { wmap: [...wmap].map(([w, i]) => `"${w}":${i}`).join(' '), ans: ans.map(p => `[${p}]`).join(' ') || '∅' } });
+    snap(3, '先建哈希表：单词 → 下标。');
+    words.forEach((word, idx) => {
+      snap(13, `看第 ${idx} 个单词 "${word}"。`, { cur: idx });
+      if (wmap.has('') && word !== '' && isPal(word)) { const b = wmap.get(''); add(b, idx); add(idx, b);
+        snap(17, `"${word}" 本身是回文，和空串 "" 两种顺序都能拼成回文。`, { cur: idx, pairs: [[b, idx], [idx, b]] }); }
+      const rw = rev(word);
+      if (wmap.has(rw) && wmap.get(rw) !== idx) { const r = wmap.get(rw); add(idx, r); add(r, idx);
+        snap(24, `整词反转 "${rw}" 在表里（下标 ${r}），两种顺序都是回文。`, { cur: idx, partner: r, pairs: [[idx, r], [r, idx]] }); }
+      else snap(20, `整词反转 "${rw}" ${wmap.has(rw) ? '就是它自己' : '不在表里'}。`, { cur: idx });
+      for (let x = 1; x < word.length; x++) {
+        const L = word.slice(0, x), Rr = word.slice(x), rl = rev(L), rr = rev(Rr);
+        const a = isPal(L) && wmap.has(rr), b = isPal(Rr) && wmap.has(rl), pairs = [];
+        if (a) { add(wmap.get(rr), idx); pairs.push([wmap.get(rr), idx]); }
+        if (b) { add(idx, wmap.get(rl)); pairs.push([idx, wmap.get(rl)]); }
+        const d1 = `left "${L}" ${isPal(L) ? `是回文，"${rr}" ${wmap.has(rr) ? '在' : '不在'}表里` : '不是回文'}`;
+        const d2 = `right "${Rr}" ${isPal(Rr) ? `是回文，"${rl}" ${wmap.has(rl) ? '在' : '不在'}表里` : '不是回文'}`;
+        snap(a ? 30 : b ? 32 : 27, `切成 "${L}" | "${Rr}"：${d1}；${d2}。`, { cur: idx, split: x, pairs, la: isPal(L), rb: isPal(Rr) });
+      }
+    });
+    snap(33, `共 ${ans.length} 对：${ans.map(p => `[${p}]`).join(' ')}。`, { done: true });
+    return F;
+  },
+  render(f) {
+    let s = '', x = 24;
+    f.words.forEach((w, i) => {
+      const wd = Math.max(44, w.length * 10 + 26); let cls = 'cell';
+      if (f.pairs && f.pairs.some(p => p.includes(i))) cls = 'ok';
+      if (i === f.cur) cls = 'cur';
+      s += R(x, 18, wd, 30, cls, 7) + T(x + wd / 2, 38, w === '' ? '""' : w, 'tb', MID) + T(x + wd / 2, 64, i, 'tm', MID); x += wd + 10;
+    });
+    if (f.split !== undefined) {
+      const w = f.words[f.cur], cw = 34, X0 = 40, y = 104;
+      [...w].forEach((ch, k) => { const left = k < f.split, gx = X0 + k * cw + (left ? 0 : 14);
+        s += R(gx, y, cw - 4, 36, (left ? f.la : f.rb) ? 'acc' : 'cell', 5) + T(gx + (cw - 4) / 2, y + 24, ch, 'tb', MID); });
+      const sx = X0 + f.split * cw + 5;
+      s += `<line x1="${sx}" y1="${y - 8}" x2="${sx}" y2="${y + 44}" class="tick"/>`;
+      s += T(X0, y + 64, `left ${f.la ? '✓ 回文' : '✗'}`, 'tm') + T(sx + 12, y + 64, `right ${f.rb ? '✓ 回文' : '✗'}`, 'tm');
+      s += T(X0, y - 16, '青色 = 这一段是回文', 'tm');
+    }
+    if (f.pairs && f.pairs.length) f.pairs.forEach(([a, b], j) => {
+      s += T(380, 120 + j * 24, `[${a}, ${b}]  "${f.words[a]}" + "${f.words[b]}" = "${f.words[a] + f.words[b]}"`, 'tb'); });
+    s += T(24, 286, 'ans', 'tl');
+    f.ans.forEach((p, j) => { s += R(64 + j * 64, 268, 56, 26, 'ok', 13) + T(92 + j * 64, 286, `[${p}]`, '', MID); });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '374', title: 'Guess Number Higher or Lower', short: 'Guess Number', diff: 'E', freq: null, solved: true, slug: 'guess-number-higher-or-lower',
+  idea: '<b>思路：</b>标准二分查找：每次猜区间中点，按 guess 的反馈丢掉一半，最多 ⌈log₂(n+1)⌉ 次。面经里的 Guess Number 是它的变体（猜一个多位数，反馈“几位对”）。（repo 里是 Python 2 的 <code>/</code>，这里写成 <code>//</code>；另外每轮调用了两次 guess，可以先存起来。）',
+  code: `class Solution(object):
+    def guessNumber(self, n):
+        left, right = 1, n
+        while True:
+            mid = (left + right) // 2
+            if guess(mid) == 1:
+                left = mid + 1
+            elif guess(mid) == -1:
+                right = mid - 1
+            else:
+                return mid`,
+  examples: [{ label: 'n=10，答案 6', args: { n: 10, pick: 6 } },
+             { label: 'n=100，答案 1', args: { n: 100, pick: 1 } },
+             { label: 'n=1000，答案 713', args: { n: 1000, pick: 713 } }],
+  view: [760, 230],
+  run({ n, pick }) {
+    const F = [], tries = []; let left = 1, right = n;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, n, pick, left, right, tries: [...tries], ...ex, vars: { left, right, mid: ex.mid ?? '—', 已猜: tries.length + ' 次' } });
+    snap(3, `在 1…${n} 里找一个隐藏的数（演示里是 ${pick}，算法本身看不到）。`);
+    while (true) {
+      const mid = Math.floor((left + right) / 2); tries.push(mid);
+      snap(5, `mid = (${left} + ${right}) // 2 = ${mid}。`, { mid });
+      if (pick > mid) { snap(6, `guess(${mid}) = 1：答案更大。`, { mid }); left = mid + 1; snap(7, `left = ${left}，丢掉左半边。`, { mid }); }
+      else if (pick < mid) { snap(8, `guess(${mid}) = -1：答案更小。`, { mid }); right = mid - 1; snap(9, `right = ${right}，丢掉右半边。`, { mid }); }
+      else { snap(11, `guess(${mid}) = 0，猜中了，一共 ${tries.length} 次（上限 ⌈log₂(${n}+1)⌉ = ${Math.ceil(Math.log2(n + 1))}）。`, { mid, done: true }); break; }
+    }
+    return F;
+  },
+  render(f) {
+    let s = ''; const X0 = 40, X1 = 720, sc = (X1 - X0) / f.n, X = v => X0 + (v - 1) * sc, w = Math.max(sc, 3);
+    s += T(X0, 40, '青色 = 答案还可能在的区间', 'tl');
+    s += R(X0, 76, X1 - X0, 30, 'cell', 4);
+    if (f.left <= f.right) s += R(X(f.left), 76, (f.right - f.left + 1) * sc, 30, 'acc', 4);
+    f.tries.forEach(t => { s += `<line x1="${X(t) + sc / 2}" y1="68" x2="${X(t) + sc / 2}" y2="114" class="tick"/>`; });
+    if (f.mid !== undefined) s += R(X(f.mid) + sc / 2 - w / 2 - 1, 70, w + 2, 42, f.done ? 'ok' : 'cur', 3) + T(X(f.mid) + sc / 2, 62, `mid ${f.mid}`, 'tb', MID);
+    s += T(X0, 128, '1', 'tm') + T(X1, 128, f.n, 'tm', END) + T(X(f.pick) + sc / 2, 150, `答案 ${f.pick}`, 'tm', MID);
+    s += T(24, 206, '猜过', 'tl');
+    f.tries.forEach((t, j) => { const cw = 52; s += R(70 + j * (cw + 6), 188, cw, 26, j === f.tries.length - 1 && f.done ? 'ok' : 'cell', 6) + T(70 + j * (cw + 6) + cw / 2, 206, t, 'tb', MID); });
+    return s;
+  } },
+/* ======================================================================= */
+{ id: '755', title: 'Pour Water', diff: 'M', freq: 79.2, solved: true, slug: 'pour-water',
+  idea: '<b>思路：</b>一滴一滴模拟。每滴水从 K 出发：先往左走，只要左边不更高就继续；再往右走；如果最后停在 K 的右边，再在平地上尽量退回左边。三个 while 合起来恰好实现“优先往左流到更低处，否则往右，否则留在原地”。复杂度 O(V·n)。',
+  code: `class Solution(object):
+    def pourWater(self, heights, V, K):
+        for _ in range(V):
+            curr = K
+            while curr > 0 and heights[curr] >= heights[curr - 1]:
+                curr -= 1
+            while curr < len(heights) - 1 and heights[curr] >= heights[curr + 1]:
+                curr += 1
+            while curr > K and heights[curr] >= heights[curr - 1]:
+                curr -= 1
+            heights[curr] += 1
+        return heights`,
+  examples: [{ label: '[2,1,1,2,1,2,2], V=4, K=3', args: { heights: [2, 1, 1, 2, 1, 2, 2], V: 4, K: 3 } },
+             { label: '[1,2,3,4], V=2, K=2', args: { heights: [1, 2, 3, 4], V: 2, K: 2 } },
+             { label: '[3,1,3], V=5, K=1', args: { heights: [3, 1, 3], V: 5, K: 1 } }],
+  view: [760, 300],
+  run({ heights, V, K }) {
+    const F = [], orig = [...heights], h = [...heights]; let drop = 0;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, h: [...h], orig, K, ...ex, vars: { heights: `[${h.join(', ')}]`, 第几滴: `${drop} / ${V}`, curr: ex.curr ?? '—' } });
+    snap(3, `往位置 K = ${K} 倒 ${V} 滴水。`);
+    for (let t = 0; t < V; t++) {
+      drop = t + 1; let c = K;
+      snap(4, `第 ${drop} 滴落在 K = ${K}。`, { curr: c });
+      while (c > 0 && h[c] >= h[c - 1]) { c--; snap(6, `左边高度 ${h[c]} 不超过 ${h[c + 1]}，往左流到 ${c}。`, { curr: c }); }
+      while (c < h.length - 1 && h[c] >= h[c + 1]) { c++; snap(8, `右边高度 ${h[c]} 不超过 ${h[c - 1]}，往右流到 ${c}。`, { curr: c }); }
+      while (c > K && h[c] >= h[c - 1]) { c--; snap(10, `停在 K 右边的平地上时，尽量退回左边，回到 ${c}。`, { curr: c }); }
+      h[c]++; snap(11, `停在位置 ${c}，水位变成 ${h[c]}。`, { curr: c, land: true });
+    }
+    snap(12, `返回 [${h.join(', ')}]。`, { done: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const n = f.h.length, cw = Math.min(80, 660 / n), X0 = (760 - n * cw) / 2, maxH = Math.max(...f.h) + 2, u = Math.min(34, 200 / maxH), base = 262;
+    for (let i = 0; i < n; i++) {
+      const x = X0 + i * cw;
+      for (let k = 0; k < f.h[i]; k++) {
+        const water = k >= f.orig[i], top = k === f.h[i] - 1;
+        s += R(x + 2, base - (k + 1) * u + 1, cw - 4, u - 2, water ? (f.land && i === f.curr && top ? 'cur' : 'acc') : 'ground', 3);
+      }
+      s += T(x + cw / 2, base + 18, i, i === f.K ? 'tb' : 'tm', MID);
+    }
+    s += T(X0 + f.K * cw + cw / 2, 22, '▼ K', 'tb', MID);
+    if (f.curr !== undefined && !f.land) s += `<circle cx="${X0 + f.curr * cw + cw / 2}" cy="${base - f.h[f.curr] * u - 14}" r="10" class="cur"/>`;
+    s += T(24, 22, '灰色 = 地形，青色 = 水', 'tm');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '773', title: 'Sliding Puzzle', diff: 'H', freq: 77.8, solved: true, slug: 'sliding-puzzle',
+  idea: '<b>思路：</b>把 2×3 的棋盘压成字符串，每个字符串是一个状态，0 是空格。从起点做 BFS，每一步把 0 和上下左右的格子交换；第一次遇到 "123450" 时的层数就是最少步数。一共只有 6! = 720 种排列，其中一半可达。（为了回放路径，动画额外记录了每个状态的父状态，repo 的代码不需要这个。）',
+  code: `class Solution(object):
+    def slidingPuzzle(self, board):
+        goal = "123450"
+        start = "".join(str(c) for row in board for c in row)
+        q = collections.deque([(start, 0)])
+        visited = set([start])
+        dirs = [[0,1],[0,-1],[1,0],[-1,0]]
+        while q:
+            path, step = q.popleft()
+            if path == goal:
+                return step
+            pos = path.index('0')
+            i, j = pos // 3, pos % 3
+            path = list(path)
+            for d in dirs:
+                x, y = i + d[0], j + d[1]
+                if x < 0 or x >= 2 or y < 0 or y >= 3:
+                    continue
+                path[x*3+y], path[i*3+j] = path[i*3+j], path[x*3+y]
+                pathstr = ''.join(path)
+                if pathstr not in visited:
+                    q.append((pathstr, step + 1))
+                    visited.add(pathstr)
+                path[x*3+y], path[i*3+j] = path[i*3+j], path[x*3+y]
+        return -1`,
+  examples: [{ label: '[[1,2,3],[4,0,5]] → 1', args: { board: [[1, 2, 3], [4, 0, 5]] } },
+             { label: '[[4,1,2],[5,0,3]] → 5', args: { board: [[4, 1, 2], [5, 0, 3]] } },
+             { label: '[[1,2,3],[5,4,0]] → -1', args: { board: [[1, 2, 3], [5, 4, 0]] } }],
+  view: [760, 280],
+  run({ board }) {
+    const F = [], goal = '123450', start = board.flat().join(''), dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+    const q = [[start, 0]], visited = new Set([start]), parent = { [start]: null }, layers = [1]; let found = null;
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, board: ex.board || start, layers: [...layers], ...ex, vars: { 已访问: visited.size + ' 个状态', 队列: q.length, ...(ex.v || {}) } });
+    snap(5, `起点 "${start}"，目标 "${goal}"，0 表示空格。BFS 一层一层扩展。`, { layer: 0 });
+    while (q.length) {
+      const [p, step] = q.shift();
+      if (p === goal) { found = step; break; }
+      const pos = p.indexOf('0'), i = Math.floor(pos / 3), j = pos % 3;
+      for (const [di, dj] of dirs) {
+        const x = i + di, y = j + dj; if (x < 0 || x >= 2 || y < 0 || y >= 3) continue;
+        const a = [...p]; [a[x * 3 + y], a[i * 3 + j]] = [a[i * 3 + j], a[x * 3 + y]]; const ps = a.join('');
+        if (!visited.has(ps)) { visited.add(ps); parent[ps] = p; q.push([ps, step + 1]); layers[step + 1] = (layers[step + 1] || 0) + 1; }
+      }
+      if (!q.length || q[0][1] > step) snap(22, `第 ${step} 层扩展完，发现 ${layers[step + 1] || 0} 个新状态（第 ${step + 1} 层）。`, { board: p, layer: step + 1 });
+    }
+    if (found === null) { snap(25, `${visited.size} 个可达状态全部试过，都不是目标，返回 -1。`, { fail: true }); return F; }
+    const path = []; for (let s = goal; s; s = parent[s]) path.unshift(s);
+    snap(11, `在第 ${found} 层第一次遇到目标，返回 ${found}。下面回放这条最短路径。`, { found });
+    for (let k = 1; k < path.length; k++) { const m = path[k - 1].indexOf('0');
+      snap(11, `第 ${k} 步：把 ${path[k][m]} 滑进空格。`, { board: path[k], movedIdx: m, found, replay: k }); }
+    return F;
+  },
+  render(f) {
+    let s = ''; const cw = 70, X0 = 40, Y0 = 52;
+    s += T(X0, 30, f.replay ? `回放第 ${f.replay} 步` : '当前状态', 'tl');
+    for (let k = 0; k < 6; k++) {
+      const ch = f.board[k], x = X0 + (k % 3) * (cw + 6), y = Y0 + Math.floor(k / 3) * (cw + 6);
+      let cls = ch === '0' ? 'ghost' : 'cell';
+      if (f.board === '123450' && ch !== '0') cls = 'ok';
+      if (f.movedIdx === k) cls = 'cur';
+      s += R(x, y, cw, cw, cls, 10) + (ch === '0' ? '' : T(x + cw / 2, y + cw / 2 + 8, ch, 'big', MID));
+    }
+    const L = f.layers, max = Math.max(...L.map(v => v || 0)), bx = 330, by = 236, bw = Math.min(22, (740 - bx) / L.length - 3);
+    s += T(bx, 30, 'BFS 每一层的新状态数', 'tl');
+    L.forEach((v, d) => { const hgt = (v || 0) / max * 170, x = bx + d * (bw + 3);
+      s += R(x, by - hgt, bw, Math.max(hgt, 1), f.found === d ? 'ok' : f.layer === d ? 'cur' : 'acc', 3) + T(x + bw / 2, by + 16, d, 'tm', MID); });
+    if (f.fail) s += T(X0, 250, '返回 -1', 'big'); else if (f.found !== undefined) s += T(X0, 250, `最少 ${f.found} 步`, 'big');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '787', title: 'Cheapest Flights Within K Stops', short: 'Cheapest Flights K Stops', diff: 'M', freq: 71.3, solved: true, slug: 'cheapest-flights-within-k-stops',
+  idea: '<b>思路：</b>Dijkstra 的变体：堆里存 (价格, 城市, 剩余可飞段数)，每次弹出最便宜的。第一次弹出终点时的价格就是答案，因为堆保证弹出顺序按价格递增。剩余段数为 0 的状态不再扩展。这个写法没有对 (城市, 段数) 去重，图大时可能重复入堆很多次，面试时可以提一下用 best[city][steps] 剪枝。',
+  code: `class Solution(object):
+    def findCheapestPrice(self, n, flights, src, dst, K):
+        f = collections.defaultdict(dict)
+        for u, v, w in flights:
+            f[u][v] = w
+        # q saves the price to current city, current city, and the remaing steps
+        q = [(0, src, K+1)]
+        while q:
+            price, curr, step = heapq.heappop(q)
+            if curr == dst:
+                return price
+            if step > 0:
+                for next in f[curr]:
+                    heapq.heappush(q, (price + f[curr][next], next, step-1))
+        return -1`,
+  examples: [{ label: 'K=1 → 200', args: { n: 3, flights: [[0, 1, 100], [1, 2, 100], [0, 2, 500]], src: 0, dst: 2, K: 1, pos: [[110, 160], [280, 60], [450, 160]] } },
+             { label: 'K=0 → 500', args: { n: 3, flights: [[0, 1, 100], [1, 2, 100], [0, 2, 500]], src: 0, dst: 2, K: 0, pos: [[110, 160], [280, 60], [450, 160]] } },
+             { label: '4 个城市，K=1 → 700', args: { n: 4, flights: [[0, 1, 100], [1, 2, 100], [2, 0, 100], [1, 3, 600], [2, 3, 200]], src: 0, dst: 3, K: 1, pos: [[90, 150], [260, 60], [260, 240], [450, 150]] } }],
+  view: [760, 300],
+  run({ n, flights, src, dst, K, pos }) {
+    const F = [], f = {}, heap = [], cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, n, flights, src, dst, pos, heap: [...heap].sort(cmp), ...ex,
+      vars: { '堆 (price, city, 剩余段数)': [...heap].sort(cmp).map(t => `(${t.join(', ')})`).join(' ') || '∅' } });
+    flights.forEach(([u, v, w]) => { (f[u] ||= {})[v] = w; });
+    snap(5, `建邻接表。从 ${src} 到 ${dst}，最多中转 ${K} 次，也就是最多坐 ${K + 1} 段航班。`);
+    heap.push([0, src, K + 1]); snap(7, `起点入堆：(0, ${src}, ${K + 1})。`);
+    while (heap.length) {
+      heap.sort(cmp); const [price, cur, step] = heap.shift();
+      snap(9, `弹出最便宜的 (${price}, ${cur}, ${step})。`, { cur });
+      if (cur === dst) { snap(11, `弹出的是终点 ${dst}，最便宜的价格就是 ${price}。`, { cur, done: true, price }); return F; }
+      if (step > 0) for (const nx of Object.keys(f[cur] || {})) { const v = +nx, np = price + f[cur][nx]; heap.push([np, v, step - 1]);
+        snap(14, `${cur} → ${v} 花 ${f[cur][nx]}，入堆 (${np}, ${v}, ${step - 1})。`, { cur, edge: [cur, v] }); }
+      else snap(12, `城市 ${cur} 已经没有剩余段数，不能再飞。`, { cur });
+    }
+    snap(15, '堆空了，到不了终点，返回 -1。', { fail: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const r = 22;
+    f.flights.forEach(([u, v, w]) => {
+      const [x1, y1] = f.pos[u], [x2, y2] = f.pos[v], L = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / L, uy = (y2 - y1) / L, hot = f.edge && f.edge[0] === u && f.edge[1] === v;
+      s += `<line x1="${x1 + ux * r}" y1="${y1 + uy * r}" x2="${x2 - ux * (r + 3)}" y2="${y2 - uy * (r + 3)}" class="edge${hot ? ' hot' : ''}" marker-end="url(#${hot ? 'ah2' : 'ah'})"/>`;
+      s += T((x1 + x2) / 2 - uy * 14, (y1 + y2) / 2 + ux * 14 + 4, w, hot ? 'tb' : 'tm', MID);
+    });
+    for (let i = 0; i < f.n; i++) {
+      const [x, y] = f.pos[i]; let cls = i === f.dst ? 'acc' : 'cell';
+      if (i === f.cur) cls = f.done ? 'ok' : 'cur';
+      s += `<circle cx="${x}" cy="${y}" r="${r}" class="${cls}"/>` + T(x, y + 5, i, 'tb', MID);
+      if (i === f.src) s += T(x, y + 40, 'src', 'tm', MID);
+      if (i === f.dst) s += T(x, y + 40, 'dst', 'tm', MID);
+    }
+    s += T(560, 30, '最小堆 (price, city, 剩余段数)', 'tl');
+    f.heap.slice(0, 8).forEach((t, j) => { s += R(560, 42 + j * 26, 180, 22, j === 0 ? 'acc' : 'cell', 5) + T(570, 58 + j * 26, `(${t.join(', ')})`, ''); });
+    if (f.heap.length > 8) s += T(560, 42 + 8 * 26 + 14, `… 还有 ${f.heap.length - 8} 个`, 'tm');
+    if (!f.heap.length) s += T(560, 58, '空', 'tm');
+    if (f.done) s += T(24, 286, `答案 ${f.price}`, 'big');
+    if (f.fail) s += T(24, 286, '返回 -1', 'big');
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1166', title: 'Design File System', diff: 'M', freq: 69.3, solved: true, slug: 'design-file-system',
+  idea: '<b>思路：</b>用一个字典存“完整路径 → 值”，不用真的建树。创建 "/a/b" 只需要检查两件事：父路径 "/a"（最后一个 "/" 之前的部分）已经存在，并且 "/a/b" 自己还不存在。根用空串 "" 占位，这样 "/a" 的父路径 "" 天然存在。每次操作 O(路径长度)。',
+  code: `class FileSystem(object):
+
+    def __init__(self):
+        self.data = {"": -1}
+
+    def createPath(self, path, value):
+        if path[:path.rfind("/")] not in self.data \\
+           or path in self.data:
+            return False
+        self.data[path] = value
+        return True
+
+    def get(self, path):
+        return self.data.get(path, -1)`,
+  examples: [{ label: 'LeetCode 示例 2', args: { ops: [['create', '/leet', 1], ['create', '/leet/code', 2], ['get', '/leet/code'], ['create', '/c/d', 1], ['get', '/c']] } },
+             { label: '重复创建', args: { ops: [['create', '/leet', 1], ['create', '/leet', 3], ['create', '/leet/code', 2], ['create', '/leet/code/x', 5], ['get', '/leet']] } }],
+  view: [760, 300],
+  run({ ops }) {
+    const F = [], data = { '': -1 }, log = []; let opLabel = 'FileSystem()';
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, data: { ...data }, log: [...log], ...ex,
+      vars: { 操作: opLabel, data: Object.entries(data).map(([k, v]) => `"${k}": ${v}`).join(', ') } });
+    snap(4, 'data 里先放根 "" → -1，这样 "/a" 的父路径 "" 一定存在。');
+    for (const op of ops) {
+      if (op[0] === 'create') {
+        const [, path, val] = op, par = path.slice(0, path.lastIndexOf('/')), noPar = !(par in data), exists = path in data;
+        opLabel = `createPath("${path}", ${val})`;
+        snap(7, `父路径是 "${par}"：${noPar ? '不存在' : '存在'}；"${path}" ${exists ? '已经存在' : '还不存在'}。`, { cur: path, par, noPar });
+        if (noPar || exists) { log.push([opLabel, 'False']); snap(9, '返回 False。', { cur: path, par, noPar, ret: 'False' }); }
+        else { data[path] = val; log.push([opLabel, 'True']); snap(11, `记录 "${path}" = ${val}，返回 True。`, { cur: path, par, added: true }); }
+      } else {
+        const [, path] = op, r = path in data ? data[path] : -1; opLabel = `get("${path}")`; log.push([opLabel, String(r)]);
+        snap(14, `get("${path}") 返回 ${r}${path in data ? '' : '（路径不存在）'}。`, { cur: path, miss: !(path in data) });
+      }
+    }
+    return F;
+  },
+  render(f) {
+    let s = T(24, 22, 'data：完整路径 → 值', 'tl'), y = 36;
+    const depth = k => k === '' ? 0 : k.split('/').length - 1;
+    Object.keys(f.data).sort().forEach(k => {
+      const x = 24 + depth(k) * 26; let cls = 'cell';
+      if (k === f.par) cls = 'acc';
+      if (k === f.cur) cls = f.added ? 'ok' : 'cur';
+      s += R(x, y, 230, 26, cls, 6) + T(x + 10, y + 17, k === '' ? '"" （根）' : k, '') + T(x + 220, y + 17, f.data[k], 'tm', END); y += 32;
+    });
+    if (f.noPar) { const x = 24 + depth(f.par) * 26; s += R(x, y, 230, 26, 'bad', 6) + T(x + 10, y + 17, `${f.par}（不存在）`, ''); y += 32; }
+    if (f.miss) { const x = 24 + depth(f.cur) * 26; s += R(x, y, 230, 26, 'bad', 6) + T(x + 10, y + 17, `${f.cur}（不存在）`, ''); }
+    s += T(420, 22, '调用记录', 'tl');
+    f.log.forEach(([o, r], j) => { const last = j === f.log.length - 1; s += T(420, 48 + j * 24, o, last ? 'tb' : '') + T(740, 48 + j * 24, r, last ? 'tb' : 'tm', END); });
+    return s;
+  } },
+
+/* ======================================================================= */
+{ id: '1500', title: 'Design a File Sharing System', short: 'File Sharing System', diff: 'M', freq: null, solved: true, slug: 'design-a-file-sharing-system',
+  idea: '<b>思路：</b>两张互为索引的表：users[用户] = 他有的块，files[块] = 有这个块的用户。离开的用户 ID 放进最小堆 lefts，新用户优先复用最小的 ID，否则用 用户数 + 1（离开的用户仍算在 users 里，所以 ID 不会撞）。request 返回拥有该块的用户（排序后），非空就让请求者也拥有它。',
+  code: `class FileSharing(object):
+    def __init__(self, m):
+        self.users = defaultdict(set) # e.g. user1: { file1, file2... }
+        self.files = defaultdict(set) # e.g. file1: { user1, user2... }
+        self.lefts = [] # minheap
+
+    def join(self, ownedChunks):
+        userId = len(self.users) + 1
+        if len(self.lefts) > 0:
+            userId = heappop(self.lefts)
+        self.users[userId] = set(ownedChunks)
+        for c in ownedChunks:
+            self.files[c].add(userId)
+        return userId
+
+    def leave(self, userID):
+        if userID not in self.users:
+            return
+        for c in self.users[userID]:
+            self.files[c].remove(userID)
+        self.users[userID] = set()
+        heappush(self.lefts, userID)
+
+    def request(self, userID, chunkID):
+        arr = list(self.files[chunkID])
+        arr.sort()
+        if len(arr) > 0:
+            self.users[userID].add(chunkID)
+            self.files[chunkID].add(userID)
+        return arr`,
+  examples: [{ label: 'LeetCode 示例', args: { m: 4, ops: [['join', [1, 2]], ['join', [2, 3]], ['join', [4]], ['request', 1, 3], ['request', 2, 2], ['leave', 1], ['request', 2, 1], ['leave', 2], ['join', []]] } },
+             { label: 'ID 复用', args: { m: 3, ops: [['join', [1]], ['join', [2]], ['leave', 1], ['join', [3]], ['request', 2, 3]] } }],
+  view: [760, 300],
+  run({ m, ops }) {
+    const F = [], users = {}, files = {}, lefts = [], log = []; let opLabel = `FileSharing(${m})`;
+    const fs = c => files[c] || (files[c] = new Set()), sorted = a => [...a].sort((x, y) => x - y);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, m, users: Object.fromEntries(Object.entries(users).map(([u, st]) => [u, [...st]])), lefts: sorted(lefts), log: [...log], ...ex,
+      vars: { 操作: opLabel, lefts: `[${sorted(lefts)}]`, ...(ex.v || {}) } });
+    snap(5, `${m} 个文件块，还没有用户。`);
+    for (const op of ops) {
+      if (op[0] === 'join') {
+        const own = op[1]; opLabel = `join([${own}])`;
+        let id = Object.keys(users).length + 1, reuse = false;
+        if (lefts.length) { lefts.sort((a, b) => a - b); id = lefts.shift(); reuse = true; }
+        snap(reuse ? 10 : 8, reuse ? `lefts 不为空，复用最小的离开 ID ${id}。` : `新 ID = 用户数 + 1 = ${id}。`, { row: id });
+        users[id] = new Set(own); own.forEach(c => fs(c).add(id)); log.push([opLabel, String(id)]);
+        snap(14, `用户 ${id} 拥有块 [${own}]，返回 ${id}。`, { row: id });
+      } else if (op[0] === 'leave') {
+        const id = op[1]; opLabel = `leave(${id})`;
+        if (!(id in users)) { log.push([opLabel, 'None']); snap(18, `用户 ${id} 不存在，直接返回。`); continue; }
+        users[id].forEach(c => files[c].delete(id)); users[id] = new Set(); lefts.push(id); log.push([opLabel, 'None']);
+        snap(22, `用户 ${id} 离开：从每个块的拥有者里删掉它，ID 放进 lefts。`, { row: id });
+      } else {
+        const [, id, c] = op, arr = sorted(fs(c)); opLabel = `request(${id}, ${c})`;
+        snap(26, `块 ${c} 现在在用户 [${arr}] 手里（排序后）。`, { row: id, col: c, owners: arr });
+        if (arr.length) { users[id].add(c); fs(c).add(id); snap(29, `非空，用户 ${id} 也拿到块 ${c}。`, { row: id, col: c, owners: arr, got: true }); }
+        log.push([opLabel, `[${arr}]`]); snap(30, `返回 [${arr}]。`, { row: id, col: c, owners: arr, got: arr.length > 0 });
+      }
+    }
+    return F;
+  },
+  render(f) {
+    let s = ''; const X0 = 150, Y0 = 46, cw = 50, ch = 36, ids = Object.keys(f.users).map(Number).sort((a, b) => a - b);
+    for (let c = 1; c <= f.m; c++) s += T(X0 + (c - 1) * cw + (cw - 6) / 2, Y0 - 10, `块 ${c}`, f.col === c ? 'tb' : 'tm', MID);
+    if (!ids.length) s += T(X0, Y0 + 20, '还没有用户', 'tm');
+    ids.forEach((u, r) => {
+      const y = Y0 + r * ch, left = f.lefts.includes(u);
+      s += T(X0 - 12, y + 20, `用户 ${u}${left ? '（已离开）' : ''}`, u === f.row ? 'tb' : 'tm', END);
+      for (let c = 1; c <= f.m; c++) {
+        const has = f.users[u].includes(c); let cls = has ? 'ok' : left ? 'ghost' : 'cell';
+        if (f.owners && f.owners.includes(u) && c === f.col) cls = 'acc';
+        if (u === f.row && c === f.col) cls = f.got ? 'ok' : 'cur';
+        s += R(X0 + (c - 1) * cw, y, cw - 6, ch - 8, cls, 5) + (has ? T(X0 + (c - 1) * cw + (cw - 6) / 2, y + 19, '✓', 'tb', MID) : '');
+      }
+      if (u === f.row) s += R(X0 - 4, y - 4, f.m * cw + 2, ch, 'mark', 7);
+    });
+    s += T(440, 30, '调用记录', 'tl');
+    const lg = f.log.slice(-9);
+    lg.forEach(([o, r], j) => { const last = j === lg.length - 1; s += T(440, 54 + j * 24, o, last ? 'tb' : '') + T(740, 54 + j * 24, r, last ? 'tb' : 'tm', END); });
+    s += T(24, 286, `lefts（最小堆）: [${f.lefts}]`, 'tl');
+    return s;
+  } },
 ];
 
 /* ---------- app ---------- */
@@ -784,8 +1465,9 @@ function hl(line) {
 }
 
 function buildList() {
-  const both = PROBLEMS.filter(p => p.both), rest = PROBLEMS.filter(p => !p.both && !p.solved), solved = PROBLEMS.filter(p => p.solved);
-  const item = p => `<button class="item" data-id="${p.id}"><span class="no">${p.id}</span><span class="nm">${esc(p.short || p.title)}${p.both ? ' <span class="star">★</span>' : ''}</span><span class="meta">${p.diff === 'H' ? 'Hard' : 'Medium'} · ${p.freq === null ? '已在 repo' : p.freq + '%'}</span></button>`;
+  const both = PROBLEMS.filter(p => p.both), rest = PROBLEMS.filter(p => !p.both && !p.solved);
+  const solved = PROBLEMS.filter(p => p.solved).sort((a, b) => (b.freq ?? -1) - (a.freq ?? -1));
+  const item = p => `<button class="item" data-id="${p.id}"><span class="no">${p.id}</span><span class="nm">${esc(p.short || p.title)}${p.both ? ' <span class="star">★</span>' : ''}</span><span class="meta">${DIFF[p.diff]}${p.freq === null ? '' : ' · ' + p.freq + '%'}${p.solved ? ' · 已做' : ''}</span></button>`;
   $('#list').innerHTML = `<h2>两份清单都有</h2>${both.map(item).join('')}<h2>频率最高、还没做</h2>${rest.map(item).join('')}<h2>repo 里已做过（复习）</h2>${solved.map(item).join('')}`;
   $('#list').addEventListener('click', e => { const b = e.target.closest('.item'); if (b) select(b.dataset.id, 0); });
 }
@@ -796,7 +1478,7 @@ function select(id, ex) {
   store.set('airbnb-viz-p', p.id);
   if (location.hash !== '#p' + p.id) history.replaceState(null, '', '#p' + p.id);
   document.querySelectorAll('.item').forEach(b => b.setAttribute('aria-current', b.dataset.id === p.id));
-  $('#head').innerHTML = `<h2>${p.id}. ${esc(p.title)}</h2><span class="chip ${p.diff}">${p.diff === 'H' ? 'Hard' : 'Medium'}</span>${p.freq === null ? '<span class="chip">已在 repo · airbnb/</span>' : `<span class="chip">频率 ${p.freq}%</span>`}${p.both ? '<span class="chip both">★ 面经也有</span>' : ''}<a href="https://leetcode.com/problems/${p.slug}/" target="_blank" rel="noopener">在 LeetCode 打开 ↗</a>`;
+  $('#head').innerHTML = `<h2>${p.id}. ${esc(p.title)}</h2><span class="chip ${p.diff}">${DIFF[p.diff]}</span>${p.freq === null ? '' : `<span class="chip">频率 ${p.freq}%</span>`}${p.solved ? '<span class="chip">已在 repo · airbnb/</span>' : ''}${p.both ? '<span class="chip both">★ 面经也有</span>' : ''}<a href="https://leetcode.com/problems/${p.slug}/" target="_blank" rel="noopener">在 LeetCode 打开 ↗</a>`;
   $('#idea').innerHTML = p.idea;
   $('#examples').innerHTML = '<span>示例</span>' + p.examples.map((e, i) => `<button class="ex" data-i="${i}" aria-pressed="${i === ex}">${esc(e.label)}</button>`).join('');
   $('#code').innerHTML = p.code.split('\n').map((l, i) => `<div class="ln" data-n="${i + 1}"><span class="n">${i + 1}</span><span>${hl(l) || ' '}</span></div>`).join('');
