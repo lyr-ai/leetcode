@@ -122,7 +122,7 @@ svg .ahp2{fill:var(--amber)}
 <div class="wrap">
   <header>
     <h1>Airbnb 高频题，一步一步看</h1>
-    <p>你的 repo 里还没做的 8 道高频题。每一帧对应下方代码里高亮的那一行，右侧是这一刻的变量。
+    <p>你的 repo 里还没做的 8 道高频题，加上已经做过、拿来复习的题。每一帧对应下方代码里高亮的那一行，右侧是这一刻的变量。
       <kbd>←</kbd> <kbd>→</kbd> 单步，<kbd>空格</kbd> 播放 / 暂停。</p>
   </header>
 
@@ -708,6 +708,68 @@ const PROBLEMS = [
     fs.forEach(([k, cnt]) => { s += T(fx, fy, `${k} = ${Object.entries(cnt).map(([c, m]) => m > 1 ? `${m}×${c}` : c).join(' + ')}`, ''); fy += 22; });
     return s;
   } },
+/* ======================================================================= */
+{ id: '1109', title: 'Corporate Flight Bookings', diff: 'M', freq: null, both: false, solved: true, slug: 'corporate-flight-bookings',
+  idea: '<b>思路：</b>差分数组。一条预订 [first, last, seats] 等于给一整段区间加 seats，逐个加是 O(n) 一条。改成只在区间起点 +seats、终点之后 −seats，最后做一遍前缀和，每个位置就自动得到所有覆盖它的预订之和。总复杂度 O(n + 预订数)。代码就是 <code>airbnb/1109_corp_flight_bookings.py</code>，原地把 ans 先当差分数组用。',
+  code: `class Solution(object):
+    def corpFlightBookings(self, bookings, n):
+        ans = [0] * n
+
+        for booking in bookings:
+            ans[booking[0] - 1] += booking[2]
+            if booking[1] < n:
+                ans[booking[1]] -= booking[2]
+
+        for i in range(1, n):
+            ans[i] += ans[i - 1]
+
+        return ans`,
+  examples: [{ label: 'n=5 → [10,55,45,25,25]', args: { n: 5, bookings: [[1, 2, 10], [2, 3, 20], [2, 5, 25]] } },
+             { label: 'n=2 → [10,25]', args: { n: 2, bookings: [[1, 2, 10], [2, 2, 15]] } },
+             { label: 'n=8，4 条预订', args: { n: 8, bookings: [[1, 3, 5], [2, 6, 10], [4, 4, 7], [5, 8, 3]] } }],
+  view: [760, 290],
+  run({ n, bookings }) {
+    const F = [], ans = Array(n).fill(0);
+    const snap = (line, msg, ex = {}) => F.push({ line, msg, n, bookings, ans: [...ans], ...ex, vars: { ans: `[${ans.join(', ')}]`, ...(ex.v || {}) } });
+    snap(3, `${n} 个航班，ans 先全部是 0。接下来它先当“差分数组”用。`, { phase: 'diff' });
+    bookings.forEach(([a, b, c], r) => {
+      snap(5, `预订 #${r + 1}：航班 ${a}–${b} 各订 ${c} 个座位。`, { phase: 'diff', cur: r, v: { booking: `[${a}, ${b}, ${c}]` } });
+      ans[a - 1] += c;
+      snap(6, `在区间起点 ans[${a - 1}] 加 ${c}：从航班 ${a} 开始多 ${c} 个座位。`, { phase: 'diff', cur: r, hl: a - 1, sign: '+', v: { booking: `[${a}, ${b}, ${c}]` } });
+      if (b < n) { ans[b] -= c;
+        snap(8, `在区间之后 ans[${b}] 减 ${c}：从航班 ${b + 1} 起这 ${c} 个座位不再算。`, { phase: 'diff', cur: r, hl: b, sign: '-', v: { booking: `[${a}, ${b}, ${c}]` } }); }
+      else snap(7, `last = ${b} 已经是最后一个航班，后面没有位置需要减。`, { phase: 'diff', cur: r, v: { booking: `[${a}, ${b}, ${c}]` } });
+    });
+    snap(10, '所有预订都只改了两个点。现在做前缀和，把差分还原成每个航班的座位数。', { phase: 'prefix', pi: 0 });
+    for (let i = 1; i < n; i++) { ans[i] += ans[i - 1];
+      snap(11, `ans[${i}] += ans[${i - 1}]，航班 ${i + 1} 的座位数是 ${ans[i]}。`, { phase: 'prefix', pi: i, v: { i } }); }
+    snap(13, `返回 [${ans.join(', ')}]。`, { phase: 'prefix', pi: n - 1, done: true });
+    return F;
+  },
+  render(f) {
+    let s = ''; const n = f.n, cw = Math.min(82, 660 / n), X0 = 70, nb = f.bookings.length;
+    for (let i = 0; i < n; i++) s += T(X0 + i * cw + cw / 2, 22, `航班 ${i + 1}`, 'tm', MID);
+    f.bookings.forEach(([a, b, c], r) => {
+      const y = 34 + r * 28, past = f.phase === 'prefix' || (f.cur !== undefined && r < f.cur);
+      const cls = f.cur === r ? 'cur' : past ? 'acc' : 'ghost';
+      s += T(X0 - 10, y + 16, `#${r + 1}`, 'tm', END) + R(X0 + (a - 1) * cw + 2, y, (b - a + 1) * cw - 4, 22, cls, 5) + T(X0 + (a - 1) * cw + 10, y + 15, `+${c}`, cls === 'ghost' ? 'tm' : '');
+    });
+    const yA = 34 + nb * 28 + 34;
+    s += T(X0 - 10, yA + 26, 'ans', 'tl', END);
+    for (let i = 0; i < n; i++) {
+      let cls = 'cell';
+      if (f.phase === 'prefix' && i <= f.pi) cls = 'acc';
+      if (f.done) cls = 'ok';
+      if (f.hl === i) cls = f.sign === '+' ? 'ok' : 'bad';
+      if (f.phase === 'prefix' && i === f.pi && !f.done && i > 0) cls = 'cur';
+      s += R(X0 + i * cw + 2, yA, cw - 4, 40, cls, 6) + T(X0 + i * cw + cw / 2, yA + 26, f.ans[i], 'tb', MID) + T(X0 + i * cw + cw / 2, yA + 56, i, 'tm', MID);
+      if (f.hl === i) s += T(X0 + i * cw + cw / 2, yA - 8, f.sign === '+' ? `+${f.bookings[f.cur][2]}` : `−${f.bookings[f.cur][2]}`, 'tb', MID);
+    }
+    if (f.phase === 'prefix' && f.pi > 0 && !f.done) { const x1 = X0 + (f.pi - 1) * cw + cw / 2, x2 = X0 + f.pi * cw + cw / 2;
+      s += `<path d="M${x1},${yA + 42} C${x1},${yA + 70} ${x2},${yA + 70} ${x2},${yA + 44}" class="edge hot" marker-end="url(#ah2)"/>`; }
+    s += T(X0, yA + 92, f.phase === 'diff' ? '阶段 1：差分。每条预订只改两个点（绿色 +，红色 −）' : '阶段 2：前缀和。青色部分已经是最终座位数', 'tl');
+    return s;
+  } },
 ];
 
 /* ---------- app ---------- */
@@ -722,9 +784,9 @@ function hl(line) {
 }
 
 function buildList() {
-  const both = PROBLEMS.filter(p => p.both), rest = PROBLEMS.filter(p => !p.both);
-  const item = p => `<button class="item" data-id="${p.id}"><span class="no">${p.id}</span><span class="nm">${esc(p.short || p.title)}${p.both ? ' <span class="star">★</span>' : ''}</span><span class="meta">${p.diff === 'H' ? 'Hard' : 'Medium'} · ${p.freq}%</span></button>`;
-  $('#list').innerHTML = `<h2>两份清单都有</h2>${both.map(item).join('')}<h2>频率最高、还没做</h2>${rest.map(item).join('')}`;
+  const both = PROBLEMS.filter(p => p.both), rest = PROBLEMS.filter(p => !p.both && !p.solved), solved = PROBLEMS.filter(p => p.solved);
+  const item = p => `<button class="item" data-id="${p.id}"><span class="no">${p.id}</span><span class="nm">${esc(p.short || p.title)}${p.both ? ' <span class="star">★</span>' : ''}</span><span class="meta">${p.diff === 'H' ? 'Hard' : 'Medium'} · ${p.freq === null ? '已在 repo' : p.freq + '%'}</span></button>`;
+  $('#list').innerHTML = `<h2>两份清单都有</h2>${both.map(item).join('')}<h2>频率最高、还没做</h2>${rest.map(item).join('')}<h2>repo 里已做过（复习）</h2>${solved.map(item).join('')}`;
   $('#list').addEventListener('click', e => { const b = e.target.closest('.item'); if (b) select(b.dataset.id, 0); });
 }
 
@@ -734,7 +796,7 @@ function select(id, ex) {
   store.set('airbnb-viz-p', p.id);
   if (location.hash !== '#p' + p.id) history.replaceState(null, '', '#p' + p.id);
   document.querySelectorAll('.item').forEach(b => b.setAttribute('aria-current', b.dataset.id === p.id));
-  $('#head').innerHTML = `<h2>${p.id}. ${esc(p.title)}</h2><span class="chip ${p.diff}">${p.diff === 'H' ? 'Hard' : 'Medium'}</span><span class="chip">频率 ${p.freq}%</span>${p.both ? '<span class="chip both">★ 面经也有</span>' : ''}<a href="https://leetcode.com/problems/${p.slug}/" target="_blank" rel="noopener">在 LeetCode 打开 ↗</a>`;
+  $('#head').innerHTML = `<h2>${p.id}. ${esc(p.title)}</h2><span class="chip ${p.diff}">${p.diff === 'H' ? 'Hard' : 'Medium'}</span>${p.freq === null ? '<span class="chip">已在 repo · airbnb/</span>' : `<span class="chip">频率 ${p.freq}%</span>`}${p.both ? '<span class="chip both">★ 面经也有</span>' : ''}<a href="https://leetcode.com/problems/${p.slug}/" target="_blank" rel="noopener">在 LeetCode 打开 ↗</a>`;
   $('#idea').innerHTML = p.idea;
   $('#examples').innerHTML = '<span>示例</span>' + p.examples.map((e, i) => `<button class="ex" data-i="${i}" aria-pressed="${i === ex}">${esc(e.label)}</button>`).join('');
   $('#code').innerHTML = p.code.split('\n').map((l, i) => `<div class="ln" data-n="${i + 1}"><span class="n">${i + 1}</span><span>${hl(l) || ' '}</span></div>`).join('');

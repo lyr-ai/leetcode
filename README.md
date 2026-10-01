@@ -6,7 +6,8 @@ About 660 Python solutions (plus a few SQL ones), grouped by topic, with company
 
 **[▶ Open the visualizer](https://lyr-ai.github.io/leetcode/airbnb/)**
 
-Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo. Every
+Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo, plus
+solved ones for review. Every
 frame highlights the matching line of Python and shows the variables at that moment. Use `←` `→` to step
 and `Space` to play or pause.
 
@@ -20,6 +21,9 @@ and `Space` to play or pause.
 | 1257 | [Smallest Common Region](https://lyr-ai.github.io/leetcode/airbnb/#p1257) | Medium | 85% |
 | 1298 | [Maximum Candies You Can Get from Boxes](https://lyr-ai.github.io/leetcode/airbnb/#p1298) | Hard | 84% |
 | 631 | [Design Excel Sum Formula](https://lyr-ai.github.io/leetcode/airbnb/#p631) | Hard | 76% |
+
+Also included for review: [1109 Corporate Flight Bookings](https://lyr-ai.github.io/leetcode/airbnb/#p1109)
+(difference array), animated from this repo's own solution in `airbnb/1109_corp_flight_bookings.py`.
 
 Frequencies come from LeetCode company-tag statistics ([codejeet](https://codejeet.com/company/airbnb)).
 ★ means the problem also appears in the most widely shared list of Airbnb interview questions
