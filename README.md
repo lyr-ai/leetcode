@@ -6,9 +6,9 @@ About 660 Python solutions (plus a few SQL ones), grouped by topic, with company
 
 **[▶ Open the visualizer](https://lyr-ai.github.io/leetcode/airbnb/)**
 
-Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo, plus the 11
-already solved in `airbnb/` for review. Every frame highlights the matching line of Python and shows the variables at that
-moment. Use `←` `→` to step and `Space` to play or pause.
+Step-through animations for 8 high-frequency Airbnb problems that are not yet solved in this repo, plus
+the 11 already solved in `airbnb/` for review. Every frame highlights the matching line of Python and shows
+the variables at that moment. Use `←` `→` to step and `Space` to play or pause.
 
 | # | Problem | Difficulty | Airbnb frequency |
 |---|---|---|---|
